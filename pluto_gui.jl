@@ -39,7 +39,7 @@ begin
   using DifferentialEquations
   using Plots
   using Interact
-  using JSON2
+
   display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
   nothing
 end
@@ -138,162 +138,6 @@ end
 begin
   display_uwd(uwd)
 end
-
-# ╔═╡ 8509bb5c-84bc-43fd-a4c6-5801b210bf58
-begin 
-	function prepData(a,b,c,e)
-		d = Dict("rates" =>[
-			Dict([("slider", 1), ("max", 1), ("min",0), ("sname","rate1")]),
-			],
-	"conc" =>[Dict([("slider", 1), ("max", 1), ("min",0), ("sname","c1")]),
-			],
-		"tab" => "null",
-		)
-		println(d)
-		
-		for i = 1:length(a)
-			if i ==1
-				d["rates"][1] = Dict([("slider", b[1]), ("max", 1), ("min",0), ("sname",string(a[i]))]) 
-				println(d)
-			else
-				push!(d["rates"],Dict([("slider", b[1]), ("max", 1), ("min",0), ("sname",string(a[i]))]))
-			end
-		end
-			
-		for i = 1:length(c)
-			if i ==1
-				d["conc"][1] = Dict([("slider", e[i]), ("max", 1), ("min",0), ("sname",string(c[i]))]) 
-			else
-				push!(d["conc"],Dict([("slider", e[i]), ("max", 1), ("min",0), ("sname",string(c[i]))]))
-			end
-		end
-		
-		return JSON2.write(d)
-	end
-end
-
-# ╔═╡ 28ff5981-52b8-40d5-9439-98acf84018e7
-begin
-	function sliderInterface(dat)
-		println(dat)
-		return HTML("""
-<html>
-<head>
-  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
-</head>
-<body>
-  <div id="app">
-    <v-app>
-      <v-main>
-        <template>
-          <v-card>
-            <v-tabs
-              v-model="tab"
-              background-color="transparent"
-
-              grow
-            >
-              <v-tab>
-                Rates
-              </v-tab>
-              <v-tab>
-                Concentrations
-              </v-tab>
-
-            </v-tabs>
-
-            <v-tabs-items v-model="tab">
-              <v-tab-item
-              >
-                <v-card  flat>
-                  <v-card-text>Adjust the reaction rates</v-card-text>
-
-                  <v-slider
-                    v-for = "s in rates"
-                    v-model="s.slider"
-                    :max="s.max"
-                    :min="s.min"
-					step =".00001"
-                    :label = "s.sname"
-                  >
-                    <template v-slot:append>
-                      <v-text-field
-                        v-model="s.slider"
-                        class="mt-0 pt-0"
-                        hide-details
-                        single-line
-                        type="number"
-                        style="width: 60px"
-                      ></v-text-field>
-                    </template>
-                </v-slider>
-
-    </v-slider>
-  </v-card>
-</v-tab-item>
-
-<v-tab-item
->
-  <v-card  flat>
-    <v-card-text>Adjust the Concentrations</v-card-text>
-
-    <v-slider
-      v-for = "s in conc"
-      v-model="s.slider"
-      :max="s.max"
-      :min="s.min"
-      step =".00001"
-      :label = "s.sname"
-    >
-      <template v-slot:append>
-        <v-text-field
-          v-model="s.slider"
-          class="mt-0 pt-0"
-          hide-details
-          single-line
-          type="number"
-          style="width: 60px"
-        ></v-text-field>
-      </template>
-  </v-slider>
-
-</v-slider>
-</v-card>
-</v-tab-item>
-
-
-</v-tabs-items>
-</v-card>
-</template>
-<v-btn>Update </v-btn>
-      </v-main>
-    </v-app>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
-  <script>
-    new Vue({
-      el: '#app',
-      vuetify: new Vuetify(),
-      data () {
-      return $dat
-			},
-    })
-  </script>
-</body>
-</html>
-
-			
-			""")
-	end
-end
-
-# ╔═╡ ee9159e2-67b6-4503-a338-10337144b821
-# sliderInterface(dataPrepped)
 
 # ╔═╡ cf9e03db-42b7-41f6-80ce-4b12ddb93211
 begin
@@ -625,29 +469,6 @@ form.insertBefore(f,sp2)
 nothing
 end
 
-# ╔═╡ 4245e6c8-d35f-4e04-b5ea-96602ceeee3e
-begin
-a = []
-b = []
-carr = []
-earr = []
-for k in keys(rates(model))
-	# println(k)
-	push!(a,k)
-	push!(b,rates(model)[k])
-	# println(rates(model)[k])
-end
-	
-for k in keys(concentrations(model))
-	# println(k)
-	push!(carr,k)
-	push!(earr,concentrations(model)[k])
-	# println(rates(model)[k])
-end
-
-	dataPrepped = prepData(a,b,carr,earr);
-end
-
 # ╔═╡ ba87cd7e-e9c7-4a20-99be-eee794f968a1
 @bind c form_vals
 
@@ -685,16 +506,12 @@ end
 model |> AffinityNet |> to_graphviz
 
 # ╔═╡ Cell order:
-# ╠═86ffd357-1510-4d05-8a38-b59b42b79b39
+# ╟─86ffd357-1510-4d05-8a38-b59b42b79b39
 # ╠═3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
 # ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
-# ╟─4245e6c8-d35f-4e04-b5ea-96602ceeee3e
-# ╟─8509bb5c-84bc-43fd-a4c6-5801b210bf58
-# ╟─28ff5981-52b8-40d5-9439-98acf84018e7
-# ╠═ee9159e2-67b6-4503-a338-10337144b821
-# ╠═cf9e03db-42b7-41f6-80ce-4b12ddb93211
+# ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─ba87cd7e-e9c7-4a20-99be-eee794f968a1
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
