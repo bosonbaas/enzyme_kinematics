@@ -671,22 +671,6 @@ begin
   plot([[sol(t)[l] for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3)
 end
 
-# ╔═╡ fcba000f-f84d-4cca-a5a0-6e8c1fa2fae0
-# begin 
-# labelcheck = [G_degbox, G_box, KG_box,K_deg_box,KK_box];
-# labelSymb = [:G_deg, :G, :KG, :K_deg, :KK];
-# labels = Symbol[];
-# 	for i = 1:length(labelcheck)
-# 		if labelcheck[i]
-# 			push!(labels,labelSymb[i]);
-# 		end
-			
-# 	end
-# end
-
-# ╔═╡ 5bc8ace9-b34d-448e-aefd-1b57b91082f2
-model
-
 # ╔═╡ 9625798a-67df-49e4-91ce-c7e23ed2a177
 model |> AffinityNet |> to_graphviz
 
@@ -708,7 +692,5 @@ model |> AffinityNet |> to_graphviz
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
 # ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
-# ╠═ad8edd69-c164-4221-bdee-e7c9381ffcab
-# ╟─fcba000f-f84d-4cca-a5a0-6e8c1fa2fae0
-# ╠═5bc8ace9-b34d-448e-aefd-1b57b91082f2
+# ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╠═9625798a-67df-49e4-91ce-c7e23ed2a177
