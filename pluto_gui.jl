@@ -39,7 +39,7 @@ begin
   using DifferentialEquations
   using Plots
   using Interact
-  
+
   display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
   nothing
 end
@@ -133,33 +133,33 @@ end
 
 # ╔═╡ ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
 md"""
-#### Wireframe Diagram
-Inputs
+#### Enzyme Diagram
+Enzymes
 
 """
 
 # ╔═╡ 4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 md"""
 
-K $(@bind kbox CheckBox()) 
-S $(@bind sbox CheckBox()) 
-L $(@bind Lbox CheckBox()) 
+K $(@bind kbox CheckBox(true))
+S $(@bind sbox CheckBox(true))
+L $(@bind Lbox CheckBox(false))
 
 """
 
 # ╔═╡ e89794b1-5bcd-4b6c-9cb2-77deca569c2e
-md"""Outputs"""
+md"""Substrates"""
 
 # ╔═╡ dcdb88ef-f04f-4ee8-87cc-bb26f396f064
 md"""
 
-G $(@bind gbox CheckBox()) 
-E $(@bind ebox CheckBox()) 
+G $(@bind gbox CheckBox(true))
+E $(@bind ebox CheckBox(false))
 
 """
 
 # ╔═╡ d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
-begin 
+begin
 inp = [kbox, sbox, Lbox];
 inpSymb = [:K, :S, :L];
 inpF = Symbol[];
@@ -167,9 +167,9 @@ inpF = Symbol[];
 		if inp[i]
 			push!(inpF,inpSymb[i]);
 		end
-			
+
 	end
-	
+
 outp = [gbox, ebox];
 outSymb = [:G, :E];
 outF = Symbol[];
@@ -177,11 +177,11 @@ outF = Symbol[];
 		if outp[i]
 			push!(outF,outSymb[i]);
 		end
-			
+
 	end
 
 end
-		
+
 
 # ╔═╡ e6589d31-dce7-42c3-b494-db03fe561ae9
   uwd = enzyme_uwd(inpF, outF);
@@ -195,7 +195,7 @@ end
 begin
   model = uwd |> functor |> apex;
   r = join(["'$k': $(rates(model)[k])" for k in keys(rates(model))], ", ");
-	
+
   r2 = join(["'$k': $(concentrations(model)[k])" for k in keys(concentrations(model))], ", ");
   #== Basic Slider Template
 <li><input
@@ -212,13 +212,13 @@ begin
 
 form_vals = HTML("""
 <form>
-		
+
   <div id ="myDIV" style='height:500px;overflow:scroll'>
-		
+
   <h4>Adjust Rates</h4>
   <table>
   </table>
-  
+
 
 
   </div>
@@ -233,12 +233,12 @@ form_vals = HTML("""
 		<table id = "bindingAffTable">
 		</table>
 	</div>
-		
-		
+
+
 </form>
 
 <style>
-		
+
 #myDIV {
   width: 100%;
   padding: 50px 0;
@@ -263,7 +263,7 @@ form_vals = HTML("""
   margin-top: 20px;
   display: none
 }
-		
+
 .button {
   background-color: #003057;
   border: none;
@@ -276,15 +276,15 @@ form_vals = HTML("""
   margin: 4px 2px;
   cursor: pointer;
 }
-.button:focus {     
-    background-color:#BFB37C;    
+.button:focus {
+    background-color:#BFB37C;
 }
 
 .slider {
   -webkit-appearance: none;
   width: 100%;
   height: 7px;
-  border-radius: 5px;  
+  border-radius: 5px;
   background: #d3d3d3;
   outline: none;
   opacity: 0.7;
@@ -297,7 +297,7 @@ form_vals = HTML("""
   appearance: none;
   width: 20px;
   height: 20px;
-  border-radius: 50%; 
+  border-radius: 50%;
   background: #003057;
   cursor: pointer;
 }
@@ -309,11 +309,11 @@ form_vals = HTML("""
   background: #003057;
   cursor: pointer;
 }
-		
-</style>
-		
 
-		
+</style>
+
+
+
 <script>
 //`currentScript` is the current script tag - we use it to select elements//
 
@@ -324,7 +324,7 @@ function hideShowRate() {
 	z.style.display = "none";
 	x.style.display = "block";
 	y.style.display = "none"
-		
+
 }
 
 function hideShowConc() {
@@ -347,16 +347,16 @@ function hideShowBind() {
 	generateBindingTable()
 
 }
-		
+
 function generateBindingTable(){
-		
+
 		let keyNames = Object.keys(rates)
 		let objVals = Object.values(rates)
 		let bindArr = []
 		let unbindArr = []
-		
+
 		for (let i in keyNames){
-		   
+
 		   let nm = keyNames[i]
 			console.log(nm.substring(0,4))
 			if(nm.substring(0,4) == 'bind'){
@@ -364,8 +364,8 @@ function generateBindingTable(){
 		}else if(nm.substring(0,6) == 'unbind'){
 				unbindArr.push(nm)
 			}
-		    
-			
+
+
 			}
 
 		let kdArr = []; //array of binding affinities
@@ -373,10 +373,10 @@ function generateBindingTable(){
 			//grab values from sliders
 	    let x = form.getElementsByClassName('sliderval');
 		let xarr = Array.from(x, (v,_)=>{return v.value})
-		
+
 		//Loop over bind and unbind arrays to do calculations
 		for(let i in keyNames){
-			
+
 			if(keyNames[i].substring(0,4) == 'bind'){
 		console.log(keyNames[i].substring(0,4))
 			let bind = keyNames[i]
@@ -401,7 +401,7 @@ function generateBindingTable(){
 
 
 		for ( var r in kdNames ){
-		  
+
 		  var item = document.createElement('tr');
 		  var label = document.createElement('td');
 		  label.innerText = kdNames[r]
@@ -410,9 +410,9 @@ function generateBindingTable(){
 		  item.appendChild(label)
           item.appendChild(label2)
 		  list3.appendChild(item)
-		  
+
 		}
-		
+
 		}
 const form = currentScript.parentElement.querySelector('form')
 const list = form.querySelector('table')
@@ -420,13 +420,13 @@ var rates = {$r};
 var conc = {$r2};
 
 
-		
-		
+
+
 for ( var r in rates ){
   console.log(r);
   var item = document.createElement('tr');
   var label = document.createElement('th');
-  
+
   label.innerText = r
   var slider_box = document.createElement('td');
   var slider_val_box = document.createElement('td');
@@ -480,8 +480,8 @@ for ( var r in conc ){
   list2.appendChild(item)
 }
 
-		
-		
+
+
 var x = form.getElementsByClassName('sliderval');
 function onsubmit(){
   // We send the value back to Julia //
@@ -498,27 +498,27 @@ form.appendChild(b)
 onsubmit()
 
 let sp2 = document.getElementById("myDIV")
-		
+
 var d = document.createElement('input')
 d.setAttribute('type','button')
 d.setAttribute('class','button')
 d.value = 'Rates'
 d.addEventListener('click', function() {hideShowRate();})
 form.insertBefore(d,sp2)
-		
+
 var e = document.createElement('input')
 e.setAttribute('type','button')
 e.setAttribute('class','button')
 e.value = 'Concentrations'
 e.addEventListener('click', function() {hideShowConc();})
 form.insertBefore(e,sp2)
-		
+
 var f = document.createElement('input')
 f.setAttribute('type','button')
 f.setAttribute('class','button')
 f.value = 'Binding Affinities'
 f.addEventListener('click', function() {hideShowBind();})
-form.insertBefore(f,sp2)		
+form.insertBefore(f,sp2)
 
 </script>
 """);
@@ -533,7 +533,7 @@ begin
   cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(model)))
   # cur_conc = concentrations(model)
   cur_conc_prep =  Dict(snames(model)[i]=>parse(Float64, c[i+length(tnames(model))]) for i in 1:length(snames(model)))
-	
+
 	keysa = keys(cur_conc_prep)
 	keyArr = Symbol[]
 	keyArrStr= String[]
@@ -558,24 +558,24 @@ begin
 keyArr2 = ["A","B"];
 graphKeyVals = HTML("""
 <form>
-		
+
   <div id ="myDIV" style='height:300px;overflow:scroll'>
-		
+
   <h4>Select Graph Variables</h4>
   <select  id="graphConc" multiple = "multiple" size = "10">
 
   </select>
-  
+
 
 
   </div>
 
-		
-		
+
+
 </form>
 
 <style>
-		
+
 #myDIV {
   width: 100%;
   padding: 10px 0;
@@ -584,11 +584,11 @@ graphKeyVals = HTML("""
   margin-top: 10px;
 }
 
-		
-</style>
-		
 
-		
+</style>
+
+
+
 <script>
 //`currentScript` is the current script tag - we use it to select elements//
 
@@ -607,20 +607,20 @@ for ( var key in concList ){
   item.value = concList[key];
   item.label = concList[key];
   list.appendChild(item)
-   
+
 }
 
 
 
-		
-		
+
+
 var x = form.getElementsByClassName('selector');
 function onsubmit(){
 		console.log('onsubmit called')
   // We send the value back to Julia //
 		console.log(x)
 
-		
+
     var selected = [];
     for (var option of document.getElementById('graphConc').options)
     {
@@ -630,7 +630,7 @@ function onsubmit(){
     }
  form.value = selected
   form.dispatchEvent(new CustomEvent('input'))
-		
+
   console.log(form.value)
     console.log(selected)
 }
@@ -643,7 +643,7 @@ form.appendChild(b)
 onsubmit()
 
 
-			
+
 
 </script>
 """);
@@ -659,7 +659,7 @@ begin
 graphKeySymb = Symbol[]
 for item in graphKeys
 		push!(graphKeySymb,Symbol(item))
-	
+
 end
 end
 
