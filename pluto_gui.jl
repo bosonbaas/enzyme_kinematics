@@ -16,32 +16,392 @@ end
 # ╔═╡ 86ffd357-1510-4d05-8a38-b59b42b79b39
 begin
 using Pkg
-Pkg.activate(".")
+Pkg.add("PlutoUI")
+Pkg.add("AlgebraicPetri")
+Pkg.add("Catlab")
+Pkg.add("LabelledArrays")
+Pkg.add("DifferentialEquations")
+Pkg.add("Plots")
+Pkg.add("Colors")
+end
+
+# ╔═╡ 32c8703f-6aa3-46be-a91b-ff36225d6bd8
+module EnzymeReactions
+
+using AlgebraicPetri
+using Catlab.Programs
+using Catlab.Graphics
+using Catlab.WiringDiagrams
+using Catlab.CategoricalAlgebra
+
+using DifferentialEquations
+using Plots
+
+export ob, ode,
+       inactivate, bindunbind, degrade,
+       enzX, enzXY, enzXsubY,
+       enz, enz_enz, enz_sub,
+       enzyme_uwd, enzyme_generators
+
+ob(type, x) = codom(Open([first(x)], LabelledReactionNet{type,Number}(x), [first(x)])).ob;
+ob(x) = codom(Open([x], LabelledPetriNet(x), [x])).ob;
+
+ode(x, t) = ODEProblem(vectorfield(x), concentrations(x), t, rates(x));
+
+function inactivate(in,on::T) where T
+  inact = Symbol(first(in), :_inact)
+  Open(LabelledReactionNet{T,Number}(unique((in, inact=>0)), ((Symbol(:inact_,first(in)),on),first(in)=>inact)))
+end;
+
+function bindunbind(in1, in2, on::T, off::T) where T
+  out = Symbol(first(in1),first(in2))
+  Open(LabelledReactionNet{T,Number}(unique((in1, in2,out=>0)), ((Symbol(:bind_,first(in1),first(in2)),on),(first(in1),first(in2))=>out),
+                                                                ((Symbol(:unbind_,out),off),out=>(first(in1),first(in2)))))
+end;
+
+function degrade(prod1,prod2,on::T) where T
+  in = Symbol(first(prod1),first(prod2))
+  prod2str = String(first(prod2))
+  degprod2 = Symbol(endswith(prod2str, "inact") ? first(prod2str) : prod2str, :_deg)
+  Open(LabelledReactionNet{T,Number}(unique((in=>0, prod1,degprod2=>0)), ((Symbol(:deg_,in),on),in=>(first(prod1),degprod2))));
+end;
+
+function inactivate(in)
+  inact = Symbol(in, :_inact)
+  Open(LabelledPetriNet(unique((in, inact)), (Symbol(:inact_,in),in=>inact)))
+end;
+
+function bindunbind(in1, in2)
+  out = Symbol(in1,in2)
+  Open(LabelledPetriNet(unique((in1, in2,out)), (Symbol(:bind_,in1,in2),(in1,in2)=>out),
+                                                (Symbol(:unbind_,out),out=>(in1,in2))))
+end;
+
+function degrade(prod1,prod2)
+  in = Symbol(prod1,prod2)
+  prod2str = String(prod2)
+  degprod2 = Symbol(endswith(prod2str, "inact") ? first(prod2str) : prod2str, :_deg)
+  Open(LabelledPetriNet(unique((in, prod1,degprod2)), (Symbol(:deg_,in),in=>(prod1,degprod2))));
+end;
+
+# ## Cathepsin *X* reacting with itself
+
+enzX = @relation (X, Xinact, Xdeg) where (X, Xinact, Xdeg, XX, XXinact) begin
+  inactX(X, Xinact)
+  bindXX(X, XX)
+  degXX(XX, X, Xdeg)
+  bindXXinact(X, Xinact, XXinact)
+  degXXinact(XXinact, X, Xdeg)
+end
+
+# ## Cathepsin *X* reacting with Substrate *Y*
+
+enzXsubY = @relation (X, Xinact, Xdeg, Y, Ydeg) where (X, Xinact, Xdeg, Y, XY, Ydeg) begin
+  bindXY(X, Y, XY)
+  degXY(XY, X, Ydeg)
+end
+
+# ## Cathepsin *X* reacting with Cathepsin *Y*
+
+enzXY = @relation (X, Xinact, Xdeg, Y, Yinact, Ydeg) where (X, Xinact, Xdeg, Y, Yinact, Ydeg, XY, XYinact) begin
+  bindXY(X, Y, XY)
+  degXY(XY, X, Ydeg)
+  bindXYinact(X, Yinact, XYinact)
+  degXYinact(XYinact, X, Ydeg)
+end
+
+function enz(rxns, cat)
+  catsym = first(cat)
+  obtype = valtype(rates(apex(first(last(first(rxns))))))
+  out = oapply(enzX, Dict([:inactX, :bindXX, :degXX, :bindXXinact, :degXXinact] .=> rxns[catsym]), Dict(
+    :X=>ob(obtype, cat),
+    :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
+    :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
+    :XX=>ob(obtype, Symbol(catsym,catsym)=>0),
+    :XXinact=>ob(obtype, Symbol(catsym,catsym,:_inact)=>0)))
+  bundle_legs(out, [[1,2,3]])
+end
+
+function enz_sub(rxns, cat1, sub)
+  catsym = first(cat1)
+  subsym = first(sub)
+  catsub = Symbol(catsym, subsym)
+  obtype = valtype(rates(apex(first(last(first(rxns))))))
+  out = oapply(enzXsubY, Dict([:bindXY, :degXY] .=> rxns[catsub]), Dict(
+    :X=>ob(obtype, cat1),
+    :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
+    :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
+    :Y=>ob(obtype, sub),
+    :XY=>ob(obtype, Symbol(catsym,subsym)=>0),
+    :Ydeg=>ob(obtype, Symbol(subsym,:_deg)=>0)))
+  bundle_legs(out, [[1,2,3], [4,5]])
+end
+
+function enz_enz(rxns, cat1, cat2)
+  cat1sym = first(cat1)
+  cat2sym = first(cat2)
+  catcat = Symbol(cat1sym, cat2sym)
+  obtype = valtype(rates(apex(first(last(first(rxns))))))
+  out = oapply(enzXY, Dict([:bindXY, :degXY, :bindXYinact, :degXYinact] .=> rxns[catcat]), Dict(
+    :X=>ob(obtype, cat1),
+    :Xinact=>ob(obtype, Symbol(cat1sym,:_inact)=>0),
+    :Xdeg=>ob(obtype, Symbol(cat1sym,:_deg)=>0),
+    :Y=>ob(obtype, cat2),
+    :Yinact=>ob(obtype, Symbol(cat2sym,:_inact)=>0),
+    :Ydeg=>ob(obtype, Symbol(cat2sym,:_deg)=>0),
+    :XY=>ob(obtype, catcat=>0),
+    :XYinact=>ob(obtype, Symbol(catcat,:_inact)=>0)))
+  bundle_legs(out, [[1,2,3], [4,5,6]])
+end
+
+function enz(cat::Symbol)
+  catsym = cat
+  out = oapply(enzX, Dict(:inactX=>inactivate(cat), :bindXX=>bindunbind(cat, cat), :degXX=>degrade(cat, cat), 
+                          :bindXXinact=>bindunbind(cat, Symbol(cat,:_inact)), 
+                          :degXXinact=>degrade(cat, Symbol(cat, :_inact))), Dict(
+    :X=>ob(cat),
+    :Xinact=>ob(Symbol(catsym,:_inact)),
+    :Xdeg=>ob(Symbol(catsym,:_deg)),
+    :XX=>ob(Symbol(catsym,catsym)),
+    :XXinact=>ob(Symbol(catsym,catsym,:_inact))))
+  bundle_legs(out, [[1,2,3]])
+end
+
+function enz_sub(cat1::Symbol, sub::Symbol)
+  catsym = cat1
+  subsym = sub
+  catsub = Symbol(catsym, subsym)
+  out = oapply(enzXsubY, Dict(:bindXY=>bindunbind(cat1, sub), :degXY=>degrade(cat1, sub)), Dict(
+    :X=>ob(cat1),
+    :Xinact=>ob(Symbol(catsym,:_inact)),
+    :Xdeg=>ob(Symbol(catsym,:_deg)),
+    :Y=>ob(sub),
+    :XY=>ob(Symbol(catsym,subsym)),
+    :Ydeg=>ob(Symbol(subsym,:_deg))))
+  bundle_legs(out, [[1,2,3], [4,5]])
+end
+
+function enz_enz(cat1::Symbol, cat2::Symbol)
+  cat1sym = cat1
+  cat2sym = cat2
+  catcat = Symbol(cat1sym, cat2sym)
+  out = oapply(enzXY, Dict(:bindXY=>bindunbind(cat1, cat2), :degXY=>degrade(cat1, cat2), :bindXYinact=>bindunbind(cat1, Symbol(cat2, :_inact)), :degXYinact=>degrade(cat1, Symbol(cat2, :_inact))), Dict(
+    :X=>ob(cat1),
+    :Xinact=>ob(Symbol(cat1sym,:_inact)),
+    :Xdeg=>ob(Symbol(cat1sym,:_deg)),
+    :Y=>ob(cat2),
+    :Yinact=>ob(Symbol(cat2sym,:_inact)),
+    :Ydeg=>ob(Symbol(cat2sym,:_deg)),
+    :XY=>ob(catcat),
+    :XYinact=>ob(Symbol(catcat,:_inact))))
+  bundle_legs(out, [[1,2,3], [4,5,6]])
+end
+
+function enzyme_uwd(enzymes::Array{Symbol}, substrates::Array{Symbol})
+  rel = RelationDiagram{Symbol}(0)
+
+  chemicals = vcat(substrates, enzymes)
+
+  subs = add_junctions!(rel, length(substrates), variable=substrates)
+  enzs = add_junctions!(rel, length(enzymes), variable=enzymes)
+  nsubs = length(subs)
+  nenzs = length(enzs)
+
+  catx = add_parts!(rel, :Box, nenzs, name=[Symbol("cat$i") for i in enzymes])
+  add_parts!(rel, :Port, nenzs, junction=enzs, box=catx)
+
+  for x in 1:nenzs
+    for y in 1:nenzs
+      if y != x
+        catxy = add_part!(rel, :Box, name=Symbol("cat$(enzymes[x])cat$(enzymes[y])"))
+        add_parts!(rel, :Port, 2, junction=[enzs[x], enzs[y]], box=catxy)
+      end
+    end
+  end
+
+  for x in 1:nenzs
+    for y in 1:nsubs
+      catxy = add_part!(rel, :Box, name=Symbol("cat$(enzymes[x])sub$(substrates[y])"))
+      add_parts!(rel, :Port, 2, junction=[enzs[x], subs[y]], box=catxy)
+    end
+  end
+  add_parts!(rel, :OuterPort, length(chemicals), outer_junction = vcat(subs, enzs))
+  rel
+end
+
+function enzyme_generators(enzymes::Array{Symbol}, substrates::Array{Symbol})
+  gens = Dict{Symbol, Any}()
+  for e1 in enzymes
+    for e2 in enzymes
+      if e1 == e2
+        gens[Symbol(:cat, e1)] = enz(e1)
+      else
+        gens[Symbol(:cat, e1, :cat, e2)] = enz_enz(e1, e2)
+      end
+    end
+    for s in substrates
+      gens[Symbol(:cat, e1, :sub, s)] = enz_sub(e1, s)
+    end
+  end
+  gens
+end
+end
+
+# ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
+begin
+	using Colors
+	using AlgebraicPetri
+	using Catlab
+	using Catlab.WiringDiagrams
+	using Catlab.CategoricalAlgebra
+	using Catlab.Graphics
+	using Catlab.Present
+	using Catlab.Theories
 end
 
 # ╔═╡ 3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 begin
-  include("EnzymeReactions.jl")
-  include("AffinityViz.jl")
-  import .EnzymeReactions: ob, ode,
-               inactivate, bindunbind, degrade,
-               enzX, enzXY, enzXsubY,
-               enz, enz_enz, enz_sub,
-               enzyme_uwd
   using PlutoUI
-
-  using AlgebraicPetri
-  using Catlab.WiringDiagrams
-  using Catlab.CategoricalAlgebra
-  using Catlab.Graphics
   using LabelledArrays
 
   using DifferentialEquations
   using Plots
-  using Interact
 
   display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
   nothing
+end
+
+# ╔═╡ 178e764e-e239-4689-bb2f-4993b7755724
+import .EnzymeReactions: ob, ode,
+		   inactivate, bindunbind, degrade,
+		   enzX, enzXY, enzXsubY,
+		   enz, enz_enz, enz_sub,
+		   enzyme_uwd
+
+# ╔═╡ 563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
+@present ThAffinityNet(FreeSchema) begin
+  (Rxn, Species)::Ob
+  (Rate, Label)::Data
+  binder::Hom(Rxn, Species)
+	bindee::Hom(Rxn, Species)
+
+  affinity::Attr(Rxn, Rate)
+
+  family::Attr(Species, Label)
+  form::Attr(Species, Label)
+end;
+
+# ╔═╡ 2d89b8e5-31a0-402c-b95c-87494a5a1317
+begin
+const AbstractAffinityNet = AbstractACSetType(ThAffinityNet)
+const AffinityNet = ACSetType(ThAffinityNet){Real, Symbol}
+
+function migrate_species!(an::AffinityNet, ln::LabelledReactionNet, index::Int64)
+  labels = Symbol.(split(string(ln[index, :sname]), "_"))
+  if length(labels) == 1
+    push!(labels, :norm)
+  end
+  @assert (length(labels) == 2)  begin
+    error("Label \"$(ln[index,:sname])\" is not in a valid format (family_form)")
+  end
+  add_part!(an, :Species, family=labels[1], form=labels[2])
+end
+
+function AffinityNet(ln::LabelledReactionNet{R, C}) where {R,C}
+  # Collect associative/dissociative pairs
+  assoc  = Dict{Int64, Array{Tuple{Int64, Int64, Int64},1}}()
+  dissoc = Dict{Int64, Array{Tuple{Int64, Int64, Int64},1}}()
+  for o in 1:nparts(ln, :T)
+    outputs = ln[incident(ln, o, :ot), :os]
+    inputs = ln[incident(ln, o, :it), :is]
+
+    if length(outputs) == 2 && length(inputs) == 1
+      if !(inputs[1] in keys(dissoc))
+        dissoc[inputs[1]] = Array{Tuple{Int64, Int64, Int64},1}()
+      end
+      push!(dissoc[inputs[1]], outputs[1] < outputs[2] ? (outputs[1], outputs[2], o) :
+                                                         (outputs[2], outputs[1], o))
+    elseif length(inputs) == 2 && length(outputs) == 1
+      if !(outputs[1] in keys(assoc))
+        assoc[outputs[1]] = Array{Tuple{Int64, Int64, Int64},1}()
+      end
+      push!(assoc[outputs[1]], inputs[1] < inputs[2] ? (inputs[1], inputs[2], o) :
+            (inputs[2], inputs[1], o))
+    end
+  end
+
+  # Generate affinity net from pairs
+  an = AffinityNet()
+  s2i = Dict{Int64, Int64}()
+  for prod in keys(assoc)
+    if prod in keys(dissoc)
+      for j in 1:length(assoc[prod])
+        for i in 1:length(dissoc[prod])
+          if assoc[prod][j][[1,2]] == dissoc[prod][i][[1,2]]
+            ls, rs = ln[incident(ln, assoc[prod][j][3], :it), :is]
+            ar, dr = (ln[assoc[prod][j][3], :rate], ln[dissoc[prod][i][3], :rate])
+            if !(ls in keys(s2i))
+              s2i[ls] = migrate_species!(an, ln, ls)
+            end
+            if !(rs in keys(s2i))
+              s2i[rs] = migrate_species!(an, ln, rs)
+            end
+            add_part!(an, :Rxn, binder=s2i[ls], bindee=s2i[rs], affinity=ar/dr)
+          end
+        end
+      end
+    end
+  end
+  an
+end
+
+function propertygraph(an::AffinityNet;
+                       prog::AbstractString="neato", graph_attrs::AbstractDict=Dict(),
+                       node_attrs::AbstractDict=Dict(), edge_attrs::AbstractDict=Dict(:len=>"2.0"),
+                       node_labels::Bool=true, edge_labels::Bool=false)
+
+  shapes = ["box", "circle", "triangle", "diamond", "pentagon", "hexagon", "septagon", "octagon"]
+
+  families = unique(an[:family])
+  forms =	unique(an[:form])
+
+  colors = string.(hex.(distinguishable_colors(length(forms), [RGB(1,1,1),RGB(0,0,0)], dropseed=true)))
+
+  fam2shp = Dict(families[i]=>shapes[i] for i in 1:length(families))
+  frm2clr = Dict(forms[i]=>colors[i] for i in 1:length(forms))
+
+  rates = an[:affinity]
+  minrate, maxrate = (minimum(rates), maximum(rates))
+  rate_to_width(rate) = begin
+    0.1 + (log(rate) - log(minrate)) * (2/(log(maxrate)-log(minrate)))
+  end
+
+	node_labeler(v) = begin
+    Dict(:label=>"$(an[v,:family])$(an[v,:form]==:norm ? "" : Symbol("_",an[v,:form]))",
+         :style=>"filled",
+         :width=>"0.75", :height=>"0.75", :fixedsize=>"false",
+         :shape=>fam2shp[an[v,:family]],
+         :fillcolor=>"#$(frm2clr[an[v,:form]])")
+  end
+
+  edge_labeler(e) = begin
+    return Dict(:color=>"black", :penwidth=>"$(round(rate_to_width(an[e,:affinity]), digits=1))")
+  end
+
+  g = Catlab.Graphs.Graph()
+  migrate!(g, an, Dict(:V=>:Species, :E=>:Rxn), Dict(:tgt=>:bindee, :src=>:binder))
+
+  Catlab.Graphs.PropertyGraph{Any}(g, node_labeler, edge_labeler;
+                                  prog = prog,
+                                  graph = merge!(Dict(:rankdir => "TB"), graph_attrs),
+                                  node = merge!(Graphics.GraphvizGraphs.default_node_attrs(node_labels), node_attrs),
+                                  edge = merge!(Dict(:arrowsize => "0.5"), edge_attrs),
+                                  )
+end
+
+function Graphics.to_graphviz(an::AffinityNet; kwargs...)
+  propertygraph(an; kwargs...) |> to_graphviz
+end
 end
 
 # ╔═╡ 93df89f0-8429-4fcc-bd01-6982417f5134
@@ -676,6 +1036,11 @@ model |> AffinityNet |> to_graphviz
 
 # ╔═╡ Cell order:
 # ╟─86ffd357-1510-4d05-8a38-b59b42b79b39
+# ╟─32c8703f-6aa3-46be-a91b-ff36225d6bd8
+# ╟─178e764e-e239-4689-bb2f-4993b7755724
+# ╟─4c9c24cc-b865-4825-a841-f717120d27d2
+# ╠═563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
+# ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
 # ╟─ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
