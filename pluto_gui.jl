@@ -20,7 +20,7 @@ Pkg.add("PlutoUI")
 Pkg.add("AlgebraicPetri")
 Pkg.add("Catlab")
 Pkg.add("LabelledArrays")
-Pkg.add("DifferentialEquations")
+#Pkg.add("DifferentialEquations")
 Pkg.add("Plots")
 Pkg.add("Colors")
 end
@@ -34,7 +34,7 @@ using Catlab.Graphics
 using Catlab.WiringDiagrams
 using Catlab.CategoricalAlgebra
 
-using DifferentialEquations
+#using DifferentialEquations
 using Plots
 
 export ob, ode,
@@ -46,7 +46,7 @@ export ob, ode,
 ob(type, x) = codom(Open([first(x)], LabelledReactionNet{type,Number}(x), [first(x)])).ob;
 ob(x) = codom(Open([x], LabelledPetriNet(x), [x])).ob;
 
-ode(x, t) = ODEProblem(vectorfield(x), concentrations(x), t, rates(x));
+#ode(x, t) = ODEProblem(vectorfield(x), concentrations(x), t, rates(x));
 
 function inactivate(in,on::T) where T
   inact = Symbol(first(in), :_inact)
@@ -264,7 +264,7 @@ begin
   using PlutoUI
   using LabelledArrays
 
-  using DifferentialEquations
+#  using DifferentialEquations
   using Plots
 
   display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
