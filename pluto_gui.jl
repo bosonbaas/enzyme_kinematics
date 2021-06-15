@@ -13,18 +13,6 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 86ffd357-1510-4d05-8a38-b59b42b79b39
-begin
-using Pkg
-Pkg.add("PlutoUI")
-Pkg.add("AlgebraicPetri")
-Pkg.add("Catlab")
-Pkg.add("LabelledArrays")
-#Pkg.add("DifferentialEquations")
-Pkg.add("Plots")
-Pkg.add("Colors")
-end
-
 # ╔═╡ 32c8703f-6aa3-46be-a91b-ff36225d6bd8
 module EnzymeReactions
 
@@ -34,7 +22,7 @@ using Catlab.Graphics
 using Catlab.WiringDiagrams
 using Catlab.CategoricalAlgebra
 
-#using DifferentialEquations
+using DifferentialEquations
 using Plots
 
 export ob, ode,
@@ -46,7 +34,7 @@ export ob, ode,
 ob(type, x) = codom(Open([first(x)], LabelledReactionNet{type,Number}(x), [first(x)])).ob;
 ob(x) = codom(Open([x], LabelledPetriNet(x), [x])).ob;
 
-#ode(x, t) = ODEProblem(vectorfield(x), concentrations(x), t, rates(x));
+ode(x, t) = ODEProblem(vectorfield(x), concentrations(x), t, rates(x));
 
 function inactivate(in,on::T) where T
   inact = Symbol(first(in), :_inact)
@@ -264,7 +252,7 @@ begin
   using PlutoUI
   using LabelledArrays
 
-#  using DifferentialEquations
+  using DifferentialEquations
   using Plots
 
   display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
@@ -1035,11 +1023,10 @@ end
 model |> AffinityNet |> to_graphviz
 
 # ╔═╡ Cell order:
-# ╟─86ffd357-1510-4d05-8a38-b59b42b79b39
 # ╟─32c8703f-6aa3-46be-a91b-ff36225d6bd8
 # ╟─178e764e-e239-4689-bb2f-4993b7755724
 # ╟─4c9c24cc-b865-4825-a841-f717120d27d2
-# ╠═563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
+# ╟─563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
 # ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
