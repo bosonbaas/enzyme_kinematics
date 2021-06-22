@@ -500,10 +500,14 @@ end
 # ╔═╡ fe9b889d-79c2-493b-9426-e33e6820cd90
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
 
+# ╔═╡ 950d3b4e-f957-45b6-aa80-e3dfc765aad0
+md"""Use default rates (override uploaded rates)? $(@bind defbox CheckBox(false))"""
+
 # ╔═╡ 50334069-a50c-467c-94ae-63b9b2264a18
 begin
 	local k_rates, status
 	try
+		defbox && error("default rate override")
 		k_rates = UInt8.(user_csv["data"]) |> IOBuffer |> JSON.parse
 		status = md"""Using rates from $(user_csv["name"])"""
 	catch e
@@ -1075,9 +1079,10 @@ end
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
 # ╟─fe9b889d-79c2-493b-9426-e33e6820cd90
+# ╟─950d3b4e-f957-45b6-aa80-e3dfc765aad0
 # ╟─50334069-a50c-467c-94ae-63b9b2264a18
 # ╟─ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
-# ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
+# ╠═4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 # ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
 # ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
