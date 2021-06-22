@@ -38,6 +38,7 @@ using Catlab.Programs
 using Catlab.Graphics
 using Catlab.WiringDiagrams
 using Catlab.CategoricalAlgebra
+using Distributions
 
 using DifferentialEquations
 using Plots
@@ -51,6 +52,10 @@ export ob, ode,
 ob(type, x) = codom(Open([first(x)], LabelledReactionNet{type,Number}(x), [first(x)])).ob;
 ob(x) = codom(Open([x], LabelledPetriNet(x), [x])).ob;
 
+ode(x::Union{AbstractReactionNet{Distribution, Number},AbstractLabelledReactionNet{Distribution, Number}}, t) = begin
+  β = mean.(rates(x))
+  ODEProblem(vectorfield(x), concentrations(x), t, β)
+end
 ode(x, t) = ODEProblem(vectorfield(x), concentrations(x), t, rates(x));
 
 function inactivate(in,on::T) where T
@@ -269,7 +274,7 @@ import .EnzymeReactions: ob, ode,
 		   inactivate, bindunbind, degrade,
 		   enzX, enzXY, enzXsubY,
 		   enz, enz_enz, enz_sub,
-		   enzyme_uwd
+		   enzyme_uwd, enzyme_generators
 
 # ╔═╡ 563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
 @present ThAffinityNet(FreeSchema) begin
@@ -408,6 +413,7 @@ begin
   Linact = :L_inact=>0;
   E = :E=>700000;
   G = :G=>714000;
+  P = :P=>66000;
 
   # Parameter Rates (units of pM and min)
   rxns = Dict(
@@ -481,6 +487,13 @@ begin
     :catKsubG=>enz_sub(rxns, K,G),
     :catSsubG=>enz_sub(rxns, S,G),
     :catLsubG=>enz_sub(rxns, L,G)));
+  lfunctor(x) = oapply(x, enzyme_generators([:K,:S,:L],[:G,:E,:P]))
+  def_model = apex(functor(enzyme_uwd([:K,:S,:L],[:G,:E])))
+  def_rates = rates(def_model)
+  def_concs = Dict(c=>concentrations(def_model)[c] for c in snames(def_model))
+  def_concs[:P] = P[2]
+  def_concs[:P_deg] = 0
+  def_concs[:KP] = 0
   nothing
 end
 
@@ -488,10 +501,17 @@ end
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
 
 # ╔═╡ 50334069-a50c-467c-94ae-63b9b2264a18
-try
-	UInt8.(user_csv["data"]) |> IOBuffer |> JSON.parse
-catch e
-	md""" No file selected, reverting to default rates"""
+begin
+	local k_rates, status
+	try
+		k_rates = UInt8.(user_csv["data"]) |> IOBuffer |> JSON.parse
+		status = md"""Using rates from $(user_csv["name"])"""
+	catch e
+		k_rates = def_rates
+		status = md"""No file selected, reverting to default rates"""
+	end
+	m_rates = Dict(Symbol(k)=>k_rates[k] for k in keys(k_rates))
+	status
 end
 
 # ╔═╡ ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
@@ -518,7 +538,7 @@ md"""
 
 G $(@bind gbox CheckBox(true))
 E $(@bind ebox CheckBox(false))
-
+P $(@bind pbox CheckBox(false))
 """
 
 # ╔═╡ d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
@@ -533,10 +553,10 @@ inpF = Symbol[];
 
 	end
 
-outp = [gbox, ebox];
-outSymb = [:G, :E];
+outp = [gbox, ebox, pbox];
+outSymb = [:G, :E, :P];
 outF = Symbol[];
-	for i = 1:2
+	for i = 1:3
 		if outp[i]
 			push!(outF,outSymb[i]);
 		end
@@ -556,10 +576,10 @@ end
 
 # ╔═╡ cf9e03db-42b7-41f6-80ce-4b12ddb93211
 begin
-  model = uwd |> functor |> apex;
-  r = join(["'$k': $(rates(model)[k])" for k in keys(rates(model))], ", ");
+  model = uwd |> lfunctor |> apex;
+  r = join(["'$k': $(m_rates[k])" for k in tnames(model)], ", ");
 
-  r2 = join(["'$k': $(concentrations(model)[k])" for k in keys(concentrations(model))], ", ");
+  r2 = join(["'$k': $(def_concs[k])" for k in snames(model)], ", ");
   #== Basic Slider Template
 <li><input
   class='slider'
@@ -769,7 +789,7 @@ function generateBindingTable(){
 		  var label = document.createElement('td');
 		  label.innerText = kdNames[r]
 		  var label2 = document.createElement('td');
-		  label2.innerText =  kdArr[r].toFixed(4)
+		  label2.innerText =  kdArr[r].toExponential(2)
 		  item.appendChild(label)
           item.appendChild(label2)
 		  list3.appendChild(item)
@@ -893,7 +913,7 @@ end
 
 # ╔═╡ 066b7505-e21b-467e-86c1-cea1ff80246e
 begin
-  cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(model)))
+cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(model)))
   # cur_conc = concentrations(model)
   cur_conc_prep =  Dict(snames(model)[i]=>parse(Float64, c[i+length(tnames(model))]) for i in 1:length(snames(model)))
 
@@ -1036,12 +1056,15 @@ end
 begin
   tsteps = range(0.0,120.0, length=5000)
   # labels = [:G_deg]
-	labels = graphKeySymb
+	labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
   plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
 end
 
 # ╔═╡ 9625798a-67df-49e4-91ce-c7e23ed2a177
-model |> AffinityNet |> to_graphviz
+begin
+	get_inds(d, names) = [k=>d[k] for k in names]
+LabelledReactionNet{Number, Number}(model, get_inds(def_concs, snames(model)), get_inds(m_rates, tnames(model))) |> AffinityNet |> to_graphviz
+end
 
 # ╔═╡ Cell order:
 # ╟─32c8703f-6aa3-46be-a91b-ff36225d6bd8
@@ -1052,7 +1075,7 @@ model |> AffinityNet |> to_graphviz
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
 # ╟─fe9b889d-79c2-493b-9426-e33e6820cd90
-# ╠═50334069-a50c-467c-94ae-63b9b2264a18
+# ╟─50334069-a50c-467c-94ae-63b9b2264a18
 # ╟─ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
 # ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
@@ -1062,11 +1085,11 @@ model |> AffinityNet |> to_graphviz
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─ba87cd7e-e9c7-4a20-99be-eee794f968a1
-# ╠═066b7505-e21b-467e-86c1-cea1ff80246e
-# ╠═1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
+# ╟─066b7505-e21b-467e-86c1-cea1ff80246e
+# ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
 # ╠═a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
 # ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
-# ╠═9625798a-67df-49e4-91ce-c7e23ed2a177
+# ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
