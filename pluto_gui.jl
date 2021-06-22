@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.5
+# v0.14.8
 
 using Markdown
 using InteractiveUtils
@@ -11,6 +11,23 @@ macro bind(def, element)
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
         el
     end
+end
+
+# ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
+begin
+#	using Pkg
+#	Pkg.activate(".")
+	using Colors
+	using AlgebraicPetri
+	using Catlab
+	using Catlab.WiringDiagrams
+	using Catlab.CategoricalAlgebra
+	using Catlab.Graphics
+	using Catlab.Present
+	using Catlab.Theories
+	using JSON
+	using DataFrames
+	using CSV
 end
 
 # ╔═╡ 32c8703f-6aa3-46be-a91b-ff36225d6bd8
@@ -235,18 +252,6 @@ function enzyme_generators(enzymes::Array{Symbol}, substrates::Array{Symbol})
 end
 end
 
-# ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
-begin
-	using Colors
-	using AlgebraicPetri
-	using Catlab
-	using Catlab.WiringDiagrams
-	using Catlab.CategoricalAlgebra
-	using Catlab.Graphics
-	using Catlab.Present
-	using Catlab.Theories
-end
-
 # ╔═╡ 3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 begin
   using PlutoUI
@@ -402,7 +407,7 @@ begin
   Sinact = :S_inact=>0;
   Linact = :L_inact=>0;
   E = :E=>700000;
-  G = :G=>1300000;
+  G = :G=>714000;
 
   # Parameter Rates (units of pM and min)
   rxns = Dict(
@@ -477,6 +482,16 @@ begin
     :catSsubG=>enz_sub(rxns, S,G),
     :catLsubG=>enz_sub(rxns, L,G)));
   nothing
+end
+
+# ╔═╡ fe9b889d-79c2-493b-9426-e33e6820cd90
+md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
+
+# ╔═╡ 50334069-a50c-467c-94ae-63b9b2264a18
+try
+	UInt8.(user_csv["data"]) |> IOBuffer |> JSON.parse
+catch e
+	md""" No file selected, reverting to default rates"""
 end
 
 # ╔═╡ ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
@@ -898,7 +913,7 @@ begin
 end
 
 # ╔═╡ 1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
+sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
 
 # ╔═╡ d80f94c4-03d2-4aac-90f5-9415405b4412
 begin
@@ -1001,6 +1016,12 @@ end
 # ╔═╡ ff0774a3-0737-48c0-8b7f-b901c553c279
 @bind graphKeys graphKeyVals
 
+# ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
+begin
+	CSV.write("sim_res.csv", DataFrame(sol), header = vcat([:timestamp], collect(keys(sol(0)))))
+	md""" Download simulation data:  $(DownloadButton(read("sim_res.csv"), "sim_results.csv")) """
+end
+
 # ╔═╡ ad8edd69-c164-4221-bdee-e7c9381ffcab
 begin
 
@@ -1016,7 +1037,7 @@ begin
   tsteps = range(0.0,120.0, length=5000)
   # labels = [:G_deg]
 	labels = graphKeySymb
-  plot([[sol(t)[l] for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3)
+  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
 end
 
 # ╔═╡ 9625798a-67df-49e4-91ce-c7e23ed2a177
@@ -1030,6 +1051,8 @@ model |> AffinityNet |> to_graphviz
 # ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
+# ╟─fe9b889d-79c2-493b-9426-e33e6820cd90
+# ╠═50334069-a50c-467c-94ae-63b9b2264a18
 # ╟─ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
 # ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
@@ -1039,10 +1062,11 @@ model |> AffinityNet |> to_graphviz
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─ba87cd7e-e9c7-4a20-99be-eee794f968a1
-# ╟─066b7505-e21b-467e-86c1-cea1ff80246e
-# ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-# ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
+# ╠═066b7505-e21b-467e-86c1-cea1ff80246e
+# ╠═1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
+# ╠═a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
 # ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
+# ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╠═9625798a-67df-49e4-91ce-c7e23ed2a177
