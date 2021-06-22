@@ -937,7 +937,7 @@ cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(
 end
 
 # ╔═╡ 1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
+sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
 
 # ╔═╡ d80f94c4-03d2-4aac-90f5-9415405b4412
 begin
@@ -1042,7 +1042,8 @@ end
 
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 begin
-	CSV.write("sim_res.csv", DataFrame(sol), header = vcat([:timestamp], collect(keys(sol(0)))))
+	sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
+	CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
 	md""" Download simulation data:  $(DownloadButton(read("sim_res.csv"), "sim_results.csv")) """
 end
 
@@ -1082,7 +1083,7 @@ end
 # ╟─950d3b4e-f957-45b6-aa80-e3dfc765aad0
 # ╟─50334069-a50c-467c-94ae-63b9b2264a18
 # ╟─ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
-# ╠═4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
+# ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 # ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
 # ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
@@ -1092,7 +1093,7 @@ end
 # ╟─ba87cd7e-e9c7-4a20-99be-eee794f968a1
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-# ╠═a141cd27-6ea0-4f73-80b5-72d8e5770ed4
+# ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
 # ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
