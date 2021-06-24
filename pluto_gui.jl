@@ -1079,7 +1079,7 @@ end
 
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 begin
-  tsteps = range(0.0,120.0, length=5000)
+  tsteps = sol.t 
   # labels = [:G_deg]
 	labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
   plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
