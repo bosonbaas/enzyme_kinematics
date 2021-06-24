@@ -166,8 +166,8 @@ end
 
 function enz(cat::Symbol)
   catsym = cat
-  out = oapply(enzX, Dict(:inactX=>inactivate(cat), :bindXX=>bindunbind(cat, cat), :degXX=>degrade(cat, cat), 
-                          :bindXXinact=>bindunbind(cat, Symbol(cat,:_inact)), 
+  out = oapply(enzX, Dict(:inactX=>inactivate(cat), :bindXX=>bindunbind(cat, cat), :degXX=>degrade(cat, cat),
+                          :bindXXinact=>bindunbind(cat, Symbol(cat,:_inact)),
                           :degXXinact=>degrade(cat, Symbol(cat, :_inact))), Dict(
     :X=>ob(cat),
     :Xinact=>ob(Symbol(catsym,:_inact)),
@@ -264,6 +264,7 @@ begin
 
   using DifferentialEquations
   using Plots
+  plotly()
 
   display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
   nothing
@@ -515,6 +516,14 @@ begin
 		status = md"""No file selected, reverting to default rates"""
 	end
 	m_rates = Dict(Symbol(k)=>k_rates[k] for k in keys(k_rates))
+	valid_enz_sub = Set{Symbol}()
+	for k in keys(m_rates)
+		post = last(split("$k", "_"))
+		if length(post) == 2
+			push!(valid_enz_sub, Symbol(post[1]))
+			push!(valid_enz_sub, Symbol(post[2]))
+		end
+	end
 	status
 end
 
@@ -526,24 +535,35 @@ Enzymes
 """
 
 # ╔═╡ 4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
+begin
+#TODO
+#Find a more compact way to represent these checkboxes while still dynamically #determining which to display
+
+	local boxes = Dict(:K=>md"K $(@bind kbox CheckBox(:K ∈ valid_enz_sub))",
+				 :S=>md"S $(@bind sbox CheckBox(:S ∈ valid_enz_sub))",
+				 :L=>md"L $(@bind Lbox CheckBox(:L ∈ valid_enz_sub && false))")
 md"""
-
-K $(@bind kbox CheckBox(true))
-S $(@bind sbox CheckBox(true))
-L $(@bind Lbox CheckBox(false))
-
+$(:K ∈ valid_enz_sub ? boxes[:K] : md"")
+$(:S ∈ valid_enz_sub ? boxes[:S] : md"")
+$(:L ∈ valid_enz_sub ? boxes[:L] : md"")
 """
+end
 
 # ╔═╡ e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 md"""Substrates"""
 
 # ╔═╡ dcdb88ef-f04f-4ee8-87cc-bb26f396f064
-md"""
+begin
 
-G $(@bind gbox CheckBox(true))
-E $(@bind ebox CheckBox(false))
-P $(@bind pbox CheckBox(false))
+	local boxes = Dict(:G=>md"G $(@bind gbox CheckBox(:G ∈ valid_enz_sub))",
+				 :E=>md"E $(@bind ebox CheckBox(:E ∈ valid_enz_sub && false))",
+				 :P=>md"P $(@bind pbox CheckBox(:P ∈ valid_enz_sub))")
+md"""
+$(:G ∈ valid_enz_sub ? boxes[:G] : md"")
+$(:E ∈ valid_enz_sub ? boxes[:E] : md"")
+$(:P ∈ valid_enz_sub ? boxes[:P] : md"")
 """
+end
 
 # ╔═╡ d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
 begin
