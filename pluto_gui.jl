@@ -1071,9 +1071,10 @@ end
 begin
 
 graphKeySymb = Symbol[]
-for item in graphKeys
-		push!(graphKeySymb,Symbol(item))
-
+if !(graphKeys isa Missing)
+  for item in graphKeys
+    push!(graphKeySymb,Symbol(item))
+  end
 end
 end
 
