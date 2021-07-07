@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.8
+# v0.14.5
 
 using Markdown
 using InteractiveUtils
@@ -11,23 +11,6 @@ macro bind(def, element)
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
         el
     end
-end
-
-# ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
-begin
-#	using Pkg
-#	Pkg.activate(".")
-	using Colors
-	using AlgebraicPetri
-	using Catlab
-	using Catlab.WiringDiagrams
-	using Catlab.CategoricalAlgebra
-	using Catlab.Graphics
-	using Catlab.Present
-	using Catlab.Theories
-	using JSON
-	using DataFrames
-	using CSV
 end
 
 # ╔═╡ 32c8703f-6aa3-46be-a91b-ff36225d6bd8
@@ -255,6 +238,23 @@ function enzyme_generators(enzymes::Array{Symbol}, substrates::Array{Symbol})
   end
   gens
 end
+end
+
+# ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
+begin
+#	using Pkg
+#	Pkg.activate(".")
+	using Colors
+	using AlgebraicPetri
+	using Catlab
+	using Catlab.WiringDiagrams
+	using Catlab.CategoricalAlgebra
+	using Catlab.Graphics
+	using Catlab.Present
+	using Catlab.Theories
+	using JSON
+	using DataFrames
+	using CSV
 end
 
 # ╔═╡ 3779b846-e5ec-4239-a1d4-af2f8c2f10eb
@@ -650,14 +650,14 @@ form_vals = HTML("""
   width: 100%;
   padding: 50px 0;
   text-align: center;
-  background-color: #B3A369;
+  background-color: #F9F6E5;
   margin-top: 20px;
 }
 #concDiv {
   width: 100%;
   padding: 50px 0;
   text-align: center;
-  background-color:  #B3A369;
+  background-color:  #F9F6E5;
   margin-top: 20px;
   display: none
 }
@@ -666,7 +666,7 @@ form_vals = HTML("""
   width: 100%;
   padding: 50px 0;
   text-align: center;
-  background-color:  #B3A369;
+  background-color:  #F9F6E5;
   margin-top: 20px;
   display: none
 }
@@ -705,7 +705,7 @@ form_vals = HTML("""
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #003057;
+  background:  #F9F6E5;
   cursor: pointer;
 }
 
@@ -877,7 +877,15 @@ for ( var r in conc ){
   slider.setAttribute('max', '10');
   slider.setAttribute('value', '0.0');
   slider.setAttribute('step', '0.01');
-  slider.setAttribute('oninput', `this.parentElement.nextElementSibling.children[0].value=((10**this.value)*\${conc[r]}).toExponential(2)`);
+  console.log('concentration')
+  console.log(conc[r]);
+		
+  let test = conc[r];
+  if(test == 0){
+		test = .000001
+		}
+  slider.setAttribute('oninput', `this.parentElement.nextElementSibling.children[0].value=((10**this.value)*\${test}).toExponential(2)`);
+		
 
   slider_box.appendChild(slider)
   slider_val_box.appendChild(slider_val)
@@ -1112,7 +1120,7 @@ end
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─ba87cd7e-e9c7-4a20-99be-eee794f968a1
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
-# ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
+# ╠═1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
 # ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
