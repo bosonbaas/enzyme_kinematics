@@ -910,7 +910,6 @@ b.setAttribute('class', 'button');
 b.value = 'Update Plot';
 b.addEventListener('click', function() {onsubmit();console.log('hello from button')})
 form.appendChild(b)
-onsubmit()
 
 let sp2 = document.getElementById("myDIV")
 
@@ -934,6 +933,10 @@ f.setAttribute('class','button')
 f.value = 'Binding Affinities'
 f.addEventListener('click', function() {hideShowBind();})
 form.insertBefore(f,sp2)
+
+
+await new Promise(r => setTimeout(r, 1000));
+onsubmit()
 
 </script>
 """);
@@ -1055,11 +1058,8 @@ b.setAttribute('class', 'button');
 b.value = 'Update Plot';
 b.addEventListener('click', function() {onsubmit();console.log('hello from button')})
 form.appendChild(b)
+await new Promise(r => setTimeout(r, 1000));
 onsubmit()
-
-
-
-
 </script>
 """);
 nothing
@@ -1079,15 +1079,16 @@ end
 begin
 
 graphKeySymb = Symbol[]
-for item in graphKeys
-		push!(graphKeySymb,Symbol(item))
-
+if !(graphKeys isa Missing)
+  for item in graphKeys
+    push!(graphKeySymb,Symbol(item))
+  end
 end
 end
 
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 begin
-  tsteps = sol.t 
+  tsteps = sol.t
   # labels = [:G_deg]
 	labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
   plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
