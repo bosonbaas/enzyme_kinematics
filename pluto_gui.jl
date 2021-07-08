@@ -616,8 +616,10 @@ begin
   ></input>
 <output>1</output></li>
 ==#
-
+c = 0;
+	
 form_vals = HTML("""
+<bond def = "c">
 <form>
 
   <div id ="myDIV" style='height:500px;overflow:scroll'>
@@ -643,14 +645,14 @@ form_vals = HTML("""
 
 
 </form>
-
+</bond>
 <style>
 
 #myDIV {
   width: 100%;
   padding: 50px 0;
   text-align: center;
-  background-color: #F9F6E5;
+ background-color: #F9F6E5;
   margin-top: 20px;
 }
 #concDiv {
@@ -705,7 +707,7 @@ form_vals = HTML("""
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background:  #F9F6E5;
+  background:  #BFB37C;
   cursor: pointer;
 }
 
@@ -910,6 +912,7 @@ b.setAttribute('class', 'button');
 b.value = 'Update Plot';
 b.addEventListener('click', function() {onsubmit();console.log('hello from button')})
 form.appendChild(b)
+onsubmit()
 
 let sp2 = document.getElementById("myDIV")
 
@@ -934,17 +937,9 @@ f.value = 'Binding Affinities'
 f.addEventListener('click', function() {hideShowBind();})
 form.insertBefore(f,sp2)
 
-
-await new Promise(r => setTimeout(r, 1000));
-onsubmit()
-
 </script>
 """);
-nothing
 end
-
-# ╔═╡ ba87cd7e-e9c7-4a20-99be-eee794f968a1
-@bind c form_vals
 
 # ╔═╡ 066b7505-e21b-467e-86c1-cea1ff80246e
 begin
@@ -964,20 +959,23 @@ cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(
 
   cur_conc = @LArray valArr Tuple(keyArr)
   vf = vectorfield(model);
+sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
   nothing
 end
 
 # ╔═╡ 1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
+# sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
 
 # ╔═╡ d80f94c4-03d2-4aac-90f5-9415405b4412
 begin
 
 keyArr2 = ["A","B"];
+graphKeys = []
 graphKeyVals = HTML("""
+<bond def = "graphKeys">
 <form>
 
-  <div id ="myDIV" style='height:300px;overflow:scroll'>
+  <div id ="myDIV2" style='height:300px;overflow:scroll'>
 
   <h4>Select Graph Variables</h4>
   <select  id="graphConc" multiple = "multiple" size = "10">
@@ -991,14 +989,14 @@ graphKeyVals = HTML("""
 
 
 </form>
-
+</bond>
 <style>
 
-#myDIV {
+#myDIV2 {
   width: 100%;
   padding: 10px 0;
   text-align: center;
-  background-color: #B3A369;
+  background-color: #F9F6E5;
   margin-top: 10px;
 }
 
@@ -1058,15 +1056,18 @@ b.setAttribute('class', 'button');
 b.value = 'Update Plot';
 b.addEventListener('click', function() {onsubmit();console.log('hello from button')})
 form.appendChild(b)
-await new Promise(r => setTimeout(r, 1000));
 onsubmit()
+
+
+
+
 </script>
 """);
-nothing
+
 end
 
 # ╔═╡ ff0774a3-0737-48c0-8b7f-b901c553c279
-@bind graphKeys graphKeyVals
+# @bind graphKeys graphKeyVals
 
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 begin
@@ -1079,19 +1080,21 @@ end
 begin
 
 graphKeySymb = Symbol[]
-if !(graphKeys isa Missing)
-  for item in graphKeys
-    push!(graphKeySymb,Symbol(item))
-  end
+for item in graphKeys
+		push!(graphKeySymb,Symbol(item))
+
 end
 end
 
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 begin
-  tsteps = sol.t
-  # labels = [:G_deg]
-	labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
+  if c != 0
+	  tsteps = sol.t 
+	  # labels = [:G_deg]
+		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
+	end
+
 end
 
 # ╔═╡ 9625798a-67df-49e4-91ce-c7e23ed2a177
@@ -1115,16 +1118,15 @@ end
 # ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 # ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
-# ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
-# ╟─e6589d31-dce7-42c3-b494-db03fe561ae9
+# ╠═d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
+# ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
-# ╟─ba87cd7e-e9c7-4a20-99be-eee794f968a1
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
-# ╠═1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
+# ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
-# ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
+# ╠═ff0774a3-0737-48c0-8b7f-b901c553c279
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
