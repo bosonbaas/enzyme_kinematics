@@ -794,7 +794,7 @@ function generateBindingTable(){
 		console.log(keyNames[j].substring(0,4))
 				let unbind = keyNames[j]
 					if(bind.substring(5,bind.length) == unbind.substring(7,unbind.length)){
-						kdArr.push(xarr[i]/xarr[j])
+						kdArr.push(xarr[j]/xarr[i])
 						kdNames.push('Kd_'+bind.substring(5,bind.length))
 					}}
 					}
@@ -1121,7 +1121,7 @@ end
 # ╠═d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
 # ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
-# ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
+# ╠═cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
