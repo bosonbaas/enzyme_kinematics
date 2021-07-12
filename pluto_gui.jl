@@ -767,7 +767,7 @@ function generateBindingTable(){
 		for (let i in keyNames){
 
 		   let nm = keyNames[i]
-			console.log(nm.substring(0,4))
+			
 			if(nm.substring(0,4) == 'bind'){
 				bindArr.push(nm)
 		}else if(nm.substring(0,6) == 'unbind'){
@@ -782,27 +782,49 @@ function generateBindingTable(){
 			//grab values from sliders
 	    let x = form.getElementsByClassName('sliderval');
 		let xarr = Array.from(x, (v,_)=>{return v.value})
-
+		
 		//Loop over bind and unbind arrays to do calculations
 		for(let i in keyNames){
 
 			if(keyNames[i].substring(0,4) == 'bind'){
-		console.log(keyNames[i].substring(0,4))
+		
 			let bind = keyNames[i]
 			for(let j in keyNames){
 		    if(keyNames[j].substring(0,6) == 'unbind'){
-		console.log(keyNames[j].substring(0,4))
+		
 				let unbind = keyNames[j]
 					if(bind.substring(5,bind.length) == unbind.substring(7,unbind.length)){
-						kdArr.push(xarr[j]/xarr[i])
+								kdArr.push(xarr[j]/xarr[i])
 						kdNames.push('Kd_'+bind.substring(5,bind.length))
-					}}
+		//Create name of deg
+		
+		let nm = bind.substring(4,bind.length)
+		let deg_name = 'deg' + nm
+			for(let k in keyNames){
+				if(keyNames[k]== deg_name){
+						let kcat = keyNames[k]
+
+						let unbindval = parseFloat(xarr[j]);
+						let bindval = parseFloat(xarr[i])
+						let catval = parseFloat(xarr[k])
+						let k_m = (catval+unbindval)/bindval;
+                        
+						console.log(typeof(unbindval))
+						console.log(bindval)
+						console.log(catval)
+						console.log(k_m)
+						kdArr.push(k_m)
+						kdNames.push('Km_'+bind.substring(5,bind.length))
+						kdArr.push(catval/k_m)
+						kdNames.push('Cat_efficieny_'+bind.substring(5,bind.length))
+						
+							}
+						}}}
 					}
 				}
 			}
 
-		console.log(kdArr)
-		console.log(kdNames)
+
 		const list3 = form.querySelector('#bindingAffTable')
 		while(list3.rows.length > 0) {
 				  list3.deleteRow(0);
@@ -1118,10 +1140,10 @@ end
 # ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 # ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
-# ╠═d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
+# ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
 # ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
-# ╠═cf9e03db-42b7-41f6-80ce-4b12ddb93211
+# ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
