@@ -756,7 +756,19 @@ function hideShowBind() {
 	generateBindingTable()
 
 }
+function returnStrings(s,arr){
+		let finalArr = []
 
+		for (let item in arr){
+
+			if(arr[item].includes(s) == true){
+				finalArr.push(arr[item])
+				}
+			
+			}
+		return finalArr
+		
+		}
 function generateBindingTable(){
 
 		let keyNames = Object.keys(rates)
@@ -800,6 +812,7 @@ function generateBindingTable(){
 		
 		let nm = bind.substring(4,bind.length)
 		let deg_name = 'deg' + nm
+		
 			for(let k in keyNames){
 				if(keyNames[k]== deg_name){
 						let kcat = keyNames[k]
@@ -809,10 +822,7 @@ function generateBindingTable(){
 						let catval = parseFloat(xarr[k])
 						let k_m = (catval+unbindval)/bindval;
                         
-						console.log(typeof(unbindval))
-						console.log(bindval)
-						console.log(catval)
-						console.log(k_m)
+
 						kdArr.push(k_m)
 						kdNames.push('Km_'+bind.substring(5,bind.length))
 						kdArr.push(catval/k_m)
@@ -824,22 +834,51 @@ function generateBindingTable(){
 				}
 			}
 
-
+		
 		const list3 = form.querySelector('#bindingAffTable')
 		while(list3.rows.length > 0) {
 				  list3.deleteRow(0);
 				}
-
-
-		for ( var r in kdNames ){
-
+		
+		var header = document.createElement('thead')
+ 		var toprow = document.createElement('tr');
+		var toprowItem = document.createElement('th');
+		var toprowItem2 = document.createElement('th');
+		var toprowItem3 = document.createElement('th');
+		var toprowItem4 = document.createElement('th');
+		
+		toprowItem.innerText = 'Name';
+		toprowItem2.innerText = 'Kd';
+		toprowItem3.innerText = 'Km';
+		toprowItem4.innerText = 'Catalytic Efficiency';
+		toprow.appendChild(header);
+		toprow.appendChild(toprowItem);
+		toprow.appendChild(toprowItem2);
+		toprow.appendChild(toprowItem3);
+		toprow.appendChild(toprowItem4);
+		list3.appendChild(toprow);
+		console.log('kd names and arr')
+		console.log(kdNames)
+		console.log(kdArr)
+		//for ( var r in kdNames ){
+		for (let i = 0; i < kdNames.length/3; i++){
+		  //console.log(returnStrings('SS',kdNames))
 		  var item = document.createElement('tr');
 		  var label = document.createElement('td');
-		  label.innerText = kdNames[r]
+		  label.innerText = kdNames[i*3]
 		  var label2 = document.createElement('td');
-		  label2.innerText =  kdArr[r].toExponential(2)
+		  var label3 = document.createElement('td');
+		  var label4 = document.createElement('td');
+		
+		  label2.innerText =  kdArr[i*3].toExponential(2)
+		  
+		label3.innerText = kdArr[i*3+1].toExponential(2) // 'placeholder'
+		label4.innerText = kdArr[i*3+2].toExponential(2) // 'placeholder'
+		  item.appendChild(header)
 		  item.appendChild(label)
           item.appendChild(label2)
+		  item.appendChild(label3)
+		  item.appendChild(label4)
 		  list3.appendChild(item)
 
 		}
@@ -1141,14 +1180,14 @@ end
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 # ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
 # ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
-# ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
+# ╟─e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
-# ╠═ff0774a3-0737-48c0-8b7f-b901c553c279
+# ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
