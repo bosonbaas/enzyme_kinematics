@@ -616,7 +616,7 @@ begin
   ></input>
 <output>1</output></li>
 ==#
-c = 0;
+c = vcat(["$(m_rates[k])" for k in tnames(model)], ["$(def_concs[k])" for k in snames(model)]);
 	
 form_vals = HTML("""
 <bond def = "c">
@@ -851,21 +851,19 @@ function generateBindingTable(){
 		toprowItem2.innerText = 'Kd';
 		toprowItem3.innerText = 'Km';
 		toprowItem4.innerText = 'Catalytic Efficiency';
-		toprow.appendChild(header);
+		header.appendChild(toprow)
+		//toprow.appendChild(header);
 		toprow.appendChild(toprowItem);
 		toprow.appendChild(toprowItem2);
 		toprow.appendChild(toprowItem3);
 		toprow.appendChild(toprowItem4);
 		list3.appendChild(toprow);
-		console.log('kd names and arr')
-		console.log(kdNames)
-		console.log(kdArr)
-		//for ( var r in kdNames ){
+
 		for (let i = 0; i < kdNames.length/3; i++){
-		  //console.log(returnStrings('SS',kdNames))
+		  
 		  var item = document.createElement('tr');
 		  var label = document.createElement('td');
-		  label.innerText = kdNames[i*3]
+		  label.innerText = kdNames[i*3].substring(3)
 		  var label2 = document.createElement('td');
 		  var label3 = document.createElement('td');
 		  var label4 = document.createElement('td');
@@ -1182,11 +1180,11 @@ end
 # ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
 # ╟─e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
-# ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
+# ╠═cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-# ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
-# ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
+# ╠═a141cd27-6ea0-4f73-80b5-72d8e5770ed4
+# ╠═d80f94c4-03d2-4aac-90f5-9415405b4412
 # ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
