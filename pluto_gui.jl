@@ -414,7 +414,10 @@ begin
   Linact = :L_inact=>0;
   E = :E=>700000;
   G = :G=>714000;
-  P = :P=>66000;
+  Spike = :Spike=>66000;
+
+  cats = [:K, :S, :L]
+  subs = [:E, :G, :Spike]
 
   # Parameter Rates (units of pM and min)
   rxns = Dict(
@@ -488,13 +491,13 @@ begin
     :catKsubG=>enz_sub(rxns, K,G),
     :catSsubG=>enz_sub(rxns, S,G),
     :catLsubG=>enz_sub(rxns, L,G)));
-  lfunctor(x) = oapply(x, enzyme_generators([:K,:S,:L],[:G,:E,:P]))
+  lfunctor(x) = oapply(x, enzyme_generators([:K,:S,:L],[:G,:E,:Spike]))
   def_model = apex(functor(enzyme_uwd([:K,:S,:L],[:G,:E])))
   def_rates = rates(def_model)
   def_concs = Dict(c=>concentrations(def_model)[c] for c in snames(def_model))
-  def_concs[:P] = P[2]
-  def_concs[:P_deg] = 0
-  def_concs[:KP] = 0
+  def_concs[:Spike] = Spike[2]
+  def_concs[:Spike_deg] = 0
+  def_concs[:KSpike] = 0
   nothing
 end
 
@@ -517,11 +520,12 @@ begin
 	end
 	m_rates = Dict(Symbol(k)=>k_rates[k] for k in keys(k_rates))
 	valid_enz_sub = Set{Symbol}()
-	for k in keys(m_rates)
-		post = last(split("$k", "_"))
-		if length(post) == 2
-			push!(valid_enz_sub, Symbol(post[1]))
-			push!(valid_enz_sub, Symbol(post[2]))
+	for e in cats
+		for s in vcat(cats, subs)
+			if "bind_$e$s" ∈ keys(k_rates)
+				push!(valid_enz_sub, e)
+				push!(valid_enz_sub, s)
+			end
 		end
 	end
 	status
@@ -557,11 +561,11 @@ begin
 
 	local boxes = Dict(:G=>md"G $(@bind gbox CheckBox(:G ∈ valid_enz_sub))",
 				 :E=>md"E $(@bind ebox CheckBox(:E ∈ valid_enz_sub && false))",
-				 :P=>md"P $(@bind pbox CheckBox(:P ∈ valid_enz_sub))")
+				 :Spike=>md"Spike $(@bind pbox CheckBox(:Spike ∈ valid_enz_sub))")
 md"""
 $(:G ∈ valid_enz_sub ? boxes[:G] : md"")
 $(:E ∈ valid_enz_sub ? boxes[:E] : md"")
-$(:P ∈ valid_enz_sub ? boxes[:P] : md"")
+$(:Spike ∈ valid_enz_sub ? boxes[:Spike] : md"")
 """
 end
 
@@ -578,7 +582,7 @@ inpF = Symbol[];
 	end
 
 outp = [gbox, ebox, pbox];
-outSymb = [:G, :E, :P];
+outSymb = [:G, :E, :Spike];
 outF = Symbol[];
 	for i = 1:3
 		if outp[i]
