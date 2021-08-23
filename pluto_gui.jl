@@ -498,6 +498,8 @@ begin
   def_concs[:Spike] = Spike[2]
   def_concs[:Spike_deg] = 0
   def_concs[:KSpike] = 0
+  def_concs[:SSpike] = 0
+  def_concs[:LSpike] = 0
   nothing
 end
 
