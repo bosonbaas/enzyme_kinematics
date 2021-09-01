@@ -32,6 +32,7 @@ export ob, ode,
        enz, enz_enz, enz_sub,
        enzyme_uwd, enzyme_generators
 
+sep_sym = "↦"
 ob(type, x) = codom(Open([first(x)], LabelledReactionNet{type,Number}(x), [first(x)])).ob;
 ob(x) = codom(Open([x], LabelledPetriNet(x), [x])).ob;
 
@@ -47,13 +48,13 @@ function inactivate(in,on::T) where T
 end;
 
 function bindunbind(in1, in2, on::T, off::T) where T
-  out = Symbol(first(in1),first(in2))
-  Open(LabelledReactionNet{T,Number}(unique((in1, in2,out=>0)), ((Symbol(:bind_,first(in1),first(in2)),on),(first(in1),first(in2))=>out),
+  out = Symbol(first(in1), sep_sym,first(in2))
+  Open(LabelledReactionNet{T,Number}(unique((in1, in2,out=>0)), ((Symbol(:bind_,first(in1), sep_sym,first(in2)),on),(first(in1),first(in2))=>out),
                                                                 ((Symbol(:unbind_,out),off),out=>(first(in1),first(in2)))))
 end;
 
 function degrade(prod1,prod2,on::T) where T
-  in = Symbol(first(prod1),first(prod2))
+  in = Symbol(first(prod1), sep_sym,first(prod2))
   prod2str = String(first(prod2))
   degprod2 = Symbol(endswith(prod2str, "inact") ? first(prod2str) : prod2str, :_deg)
   Open(LabelledReactionNet{T,Number}(unique((in=>0, prod1,degprod2=>0)), ((Symbol(:deg_,in),on),in=>(first(prod1),degprod2))));
@@ -65,13 +66,13 @@ function inactivate(in)
 end;
 
 function bindunbind(in1, in2)
-  out = Symbol(in1,in2)
-  Open(LabelledPetriNet(unique((in1, in2,out)), (Symbol(:bind_,in1,in2),(in1,in2)=>out),
+  out = Symbol(in1, sep_sym,in2)
+  Open(LabelledPetriNet(unique((in1, in2,out)), (Symbol(:bind_,in1, sep_sym,in2),(in1,in2)=>out),
                                                 (Symbol(:unbind_,out),out=>(in1,in2))))
 end;
 
 function degrade(prod1,prod2)
-  in = Symbol(prod1,prod2)
+  in = Symbol(prod1, sep_sym,prod2)
   prod2str = String(prod2)
   degprod2 = Symbol(endswith(prod2str, "inact") ? first(prod2str) : prod2str, :_deg)
   Open(LabelledPetriNet(unique((in, prod1,degprod2)), (Symbol(:deg_,in),in=>(prod1,degprod2))));
@@ -110,22 +111,22 @@ function enz(rxns, cat)
     :X=>ob(obtype, cat),
     :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
     :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
-    :XX=>ob(obtype, Symbol(catsym,catsym)=>0),
-    :XXinact=>ob(obtype, Symbol(catsym,catsym,:_inact)=>0)))
+    :XX=>ob(obtype, Symbol(catsym, sep_sym,catsym)=>0),
+    :XXinact=>ob(obtype, Symbol(catsym, sep_sym,catsym,:_inact)=>0)))
   bundle_legs(out, [[1,2,3]])
 end
 
 function enz_sub(rxns, cat1, sub)
   catsym = first(cat1)
   subsym = first(sub)
-  catsub = Symbol(catsym, subsym)
+  catsub = Symbol(catsym, sep_sym, subsym)
   obtype = valtype(rates(apex(first(last(first(rxns))))))
   out = oapply(enzXsubY, Dict([:bindXY, :degXY] .=> rxns[catsub]), Dict(
     :X=>ob(obtype, cat1),
     :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
     :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
     :Y=>ob(obtype, sub),
-    :XY=>ob(obtype, Symbol(catsym,subsym)=>0),
+    :XY=>ob(obtype, Symbol(catsym,sep_sym,subsym)=>0),
     :Ydeg=>ob(obtype, Symbol(subsym,:_deg)=>0)))
   bundle_legs(out, [[1,2,3], [4,5]])
 end
@@ -133,7 +134,7 @@ end
 function enz_enz(rxns, cat1, cat2)
   cat1sym = first(cat1)
   cat2sym = first(cat2)
-  catcat = Symbol(cat1sym, cat2sym)
+  catcat = Symbol(cat1sym, sep_sym, cat2sym)
   obtype = valtype(rates(apex(first(last(first(rxns))))))
   out = oapply(enzXY, Dict([:bindXY, :degXY, :bindXYinact, :degXYinact] .=> rxns[catcat]), Dict(
     :X=>ob(obtype, cat1),
@@ -155,21 +156,21 @@ function enz(cat::Symbol)
     :X=>ob(cat),
     :Xinact=>ob(Symbol(catsym,:_inact)),
     :Xdeg=>ob(Symbol(catsym,:_deg)),
-    :XX=>ob(Symbol(catsym,catsym)),
-    :XXinact=>ob(Symbol(catsym,catsym,:_inact))))
+    :XX=>ob(Symbol(catsym, sep_sym,catsym)),
+    :XXinact=>ob(Symbol(catsym, sep_sym,catsym,:_inact))))
   bundle_legs(out, [[1,2,3]])
 end
 
 function enz_sub(cat1::Symbol, sub::Symbol)
   catsym = cat1
   subsym = sub
-  catsub = Symbol(catsym, subsym)
+  catsub = Symbol(catsym, sep_sym, subsym)
   out = oapply(enzXsubY, Dict(:bindXY=>bindunbind(cat1, sub), :degXY=>degrade(cat1, sub)), Dict(
     :X=>ob(cat1),
     :Xinact=>ob(Symbol(catsym,:_inact)),
     :Xdeg=>ob(Symbol(catsym,:_deg)),
     :Y=>ob(sub),
-    :XY=>ob(Symbol(catsym,subsym)),
+    :XY=>ob(Symbol(catsym, sep_sym,subsym)),
     :Ydeg=>ob(Symbol(subsym,:_deg))))
   bundle_legs(out, [[1,2,3], [4,5]])
 end
@@ -177,7 +178,7 @@ end
 function enz_enz(cat1::Symbol, cat2::Symbol)
   cat1sym = cat1
   cat2sym = cat2
-  catcat = Symbol(cat1sym, cat2sym)
+  catcat = Symbol(cat1sym, sep_sym, cat2sym)
   out = oapply(enzXY, Dict(:bindXY=>bindunbind(cat1, cat2), :degXY=>degrade(cat1, cat2), :bindXYinact=>bindunbind(cat1, Symbol(cat2, :_inact)), :degXYinact=>degrade(cat1, Symbol(cat2, :_inact))), Dict(
     :X=>ob(cat1),
     :Xinact=>ob(Symbol(cat1sym,:_inact)),
@@ -421,59 +422,59 @@ begin
 
   # Parameter Rates (units of pM and min)
   rxns = Dict(
-    :K => [inactivate(K, 7.494e-10)
+    "K" => [inactivate(K, 7.494e-10)
            bindunbind(K, K, 7.814e-4, 3.867e-3)
            degrade(K, K, 2.265e-1)
            bindunbind(K, Kinact, 7.814e-4, 3.867e-3)
            degrade(K, Kinact, 2.265e-1)],
-    :S => [inactivate(S, 1.906e-2)
+    "S" => [inactivate(S, 1.906e-2)
            bindunbind(S, S, 3.534e-7, 1.688e2)
            degrade(S, S, 1.433e1)
            bindunbind(S, Sinact, 3.534e-7, 1.688e2)
            degrade(S, Sinact, 1.433e1)],
-    :L => [inactivate(L, 7.810e-3)
+    "L" => [inactivate(L, 7.810e-3)
            bindunbind(L, L, 1.000e-11, 7.440e3)
            degrade(L, L, 2.670e2)
            bindunbind(L, Linact, 1.000e-11, 7.440e3)
            degrade(L, Linact, 2.670e2)],
-    :KE => [bindunbind(K, E, 9.668e-6,1.000e-2)
+    "K↦E" => [bindunbind(K, E, 9.668e-6,1.000e-2)
             degrade(K, E, 1.728e0)],
-    :KG => [bindunbind(K, G, 2.764e-6, 8.780e-1)
+    "K↦G" => [bindunbind(K, G, 2.764e-6, 8.780e-1)
             degrade(K, G, 1.502e0)],
-    :SE => [bindunbind(S, E, 4.197e-7, 1.06e-3)
+    "S↦E" => [bindunbind(S, E, 4.197e-7, 1.06e-3)
             degrade(S, E, 1.384e4)],
-    :SG => [bindunbind(S, G, 5.152e-8, 3.894e-3)
+    "S↦G" => [bindunbind(S, G, 5.152e-8, 3.894e-3)
             degrade(S, G, 8.755e-1)],
-    :LE => [bindunbind(L, E, 1.977e-8, 1.000e-2)
+    "L↦E" => [bindunbind(L, E, 1.977e-8, 1.000e-2)
             degrade(L, E, 1.066e2)],
-    :LG => [bindunbind(L, G, 3.394e-8, 2.365e1)
+    "L↦G" => [bindunbind(L, G, 3.394e-8, 2.365e1)
             degrade(L, G, 4.352e0)],
-    :KS => [bindunbind(K, S, 8.822e-4, 4.114e5)
+    "K↦S" => [bindunbind(K, S, 8.822e-4, 4.114e5)
             degrade(K, S, 9.000e-10)
             bindunbind(K, Sinact, 8.822e-4, 4.114e5)
             degrade(K, Sinact, 9.000e-10)],
-    :KL => [bindunbind(K, L, 1.756e-4, 3.729e4)
+    "K↦L" => [bindunbind(K, L, 1.756e-4, 3.729e4)
             degrade(K, L, 6.505e6)
             bindunbind(K, Linact, 1.756e-4, 3.729e4)
             degrade(K, Linact, 6.505e6)],
-    :SK => [bindunbind(S, K, 3.679e-4, 1.562e3)
+    "S↦K" => [bindunbind(S, K, 3.679e-4, 1.562e3)
             degrade(S, K, 4.410e2)
             bindunbind(S, Kinact, 3.679e-4, 1.562e3)
             degrade(S, Kinact, 4.410e2)],
-    :SL => [bindunbind(S, L, 1.000e-3, 5.000e2)
+    "S↦L" => [bindunbind(S, L, 1.000e-3, 5.000e2)
             degrade(S, L, 1.000e-7)
             bindunbind(S, Linact, 1.000e-3, 5.000e2)
             degrade(S, Linact, 1.000e-7)],
-    :LK => [bindunbind(L, K, 1.000e-3, 4.118e3)
+    "L↦K" => [bindunbind(L, K, 1.000e-3, 4.118e3)
             degrade(L, K, 3.234e1)
             bindunbind(L, Kinact, 1.000e-3, 4.118e3)
             degrade(L, Kinact, 3.234e1)],
-    :LS => [bindunbind(L, S, 1.056e-12, 5.000e2)
+    "L↦S" => [bindunbind(L, S, 1.056e-12, 5.000e2)
             degrade(L, S, 5.000e-1)
             bindunbind(L, Sinact, 1.056e-12, 5.000e2)
             degrade(L, Sinact, 5.000e-1)]
   );
-
+  rxns = Dict(Symbol(k)=>v for (k,v) in rxns)
   # define labels to reaction network mappings
   functor(x) = oapply(x, Dict(
     :catK=>enz(rxns, K),
@@ -497,9 +498,9 @@ begin
   def_concs = Dict(c=>concentrations(def_model)[c] for c in snames(def_model))
   def_concs[:Spike] = Spike[2]
   def_concs[:Spike_deg] = 0
-  def_concs[:KSpike] = 0
-  def_concs[:SSpike] = 0
-  def_concs[:LSpike] = 0
+  def_concs[Symbol("K↦Spike")] = 0
+  def_concs[Symbol("S↦Spike")] = 0
+  def_concs[Symbol("L↦Spike")] = 0
   nothing
 end
 
@@ -524,7 +525,7 @@ begin
 	valid_enz_sub = Set{Symbol}()
 	for e in cats
 		for s in vcat(cats, subs)
-      if Symbol("bind_$e$s") ∈ keys(m_rates)
+      if Symbol("bind_$e↦$s") ∈ keys(m_rates)
 				push!(valid_enz_sub, e)
 				push!(valid_enz_sub, s)
 			end
