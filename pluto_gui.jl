@@ -498,6 +498,63 @@ begin
   nothing
 end
 
+# ╔═╡ 56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
+begin 
+	function formatSymbArr(arr)
+		B = Array{Symbol}(undef, length(arr))
+		for i in 1:length(arr)
+			 B[i] = Symbol(arr[i])
+		end
+		return B
+	end
+	
+	
+	function formatStrArr(arr)
+		B = Array{String}(undef, length(arr))
+		for i in 1:length(arr)
+			 B[i] = String(arr[i])
+		end
+		return B		
+		
+	end
+	
+	function combineConc(df)
+		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
+		cols = names(df)
+		# println(cols)
+		chems = Array{Char}(undef, 0)
+		for i in 2:length(cols)
+
+			letter = cols[i][1]
+			# println(letter)
+			append!(chems,[letter])
+		end
+		unique!(chems)
+		# println(chems)
+		dff = DataFrame()
+		dff.timestamp = df[!,"timestamp"]
+		for i in 1:length(chems)
+			arr = zeros(length(dff.timestamp))
+			println("new chem")
+			for j in 2:length(cols)
+				if chems[i] == cols[j][1]
+					println("arr before: ",arr[10] )
+					println("Value added: ", df[10,cols[j]])
+					arr = arr .+ df[!,cols[j]]
+					println("arr after: ",arr[10] )
+					
+				end
+			end
+			
+			colname = string(chems[i])
+			
+			dff[!,colname] = arr
+		end
+		
+		return dff
+	end
+end
+
 # ╔═╡ fe9b889d-79c2-493b-9426-e33e6820cd90
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
 
@@ -1022,8 +1079,8 @@ sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
   nothing
 end
 
-# ╔═╡ 1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-# sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
+# ╔═╡ 12866252-a5c6-43d0-92f1-d52df5a2d949
+md"""Display total concentrations? $(@bind combineCheck CheckBox(false))"""
 
 # ╔═╡ d80f94c4-03d2-4aac-90f5-9415405b4412
 begin
@@ -1036,7 +1093,7 @@ graphKeyVals = HTML("""
 
   <div id ="myDIV2" style='height:300px;overflow:scroll'>
 
-  <h4>Select Graph Variables</h4>
+  <h4>Select Variables to Export</h4>
   <select  id="graphConc" multiple = "multiple" size = "10">
 
   </select>
@@ -1112,7 +1169,7 @@ function onsubmit(){
 var b = document.createElement('input');
 b.setAttribute('type', 'button');
 b.setAttribute('class', 'button');
-b.value = 'Update Plot';
+b.value = 'Update variable list';
 b.addEventListener('click', function() {onsubmit();console.log('hello from button')})
 form.appendChild(b)
 onsubmit()
@@ -1125,13 +1182,28 @@ onsubmit()
 
 end
 
-# ╔═╡ ff0774a3-0737-48c0-8b7f-b901c553c279
-# @bind graphKeys graphKeyVals
+# ╔═╡ 675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
+md"""Export only selected variables? $(@bind importCheck CheckBox(false))"""
 
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 begin
-	sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
+		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
+	if importCheck == false
+
+	# sol2.u
 	CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
+	else
+		
+		df = DataFrame(sol2)
+		nms = collect(keys(sol2(0)))
+	prepend!(nms,[:timestamp])
+	rename!(df,nms)
+	finKeys = formatSymbArr(graphKeys)
+	prepend!(finKeys,[:timestamp])
+	dfFin = select(df,finKeys)
+		CSV.write("sim_res.csv", dfFin)
+	end
+	
 	md""" Download simulation data:  $(DownloadButton(read("sim_res.csv"), "sim_results.csv")) """
 end
 
@@ -1148,10 +1220,30 @@ end
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 begin
   if c != 0
+	if combineCheck == false
 	  tsteps = sol.t 
 	  # labels = [:G_deg]
 		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
 	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
+		else
+			labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+			S_labels = formatStrArr(labels)
+			prepend!(S_labels,["timestamp"])
+			dfs = DataFrame(sol)
+			rename!(dfs,S_labels)
+			# names(dfs)[1][1]
+			dff = combineConc(dfs)
+			
+			labels_new = names(dff)[2:end]
+			
+			println(labels_new)
+			timesteps = dff[!,"timestamp"]
+			dff[!,2:end]
+			data = Matrix(dff[!,2:end])/1e3
+			plot(timesteps,data, label = reshape(labels_new, (1,length(labels_new))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+			# Vector(labels_new)
+		end
+		
 	end
 
 end
@@ -1170,6 +1262,7 @@ end
 # ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
+# ╟─56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
 # ╟─fe9b889d-79c2-493b-9426-e33e6820cd90
 # ╟─950d3b4e-f957-45b6-aa80-e3dfc765aad0
 # ╟─50334069-a50c-467c-94ae-63b9b2264a18
@@ -1180,12 +1273,12 @@ end
 # ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
 # ╟─e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
-# ╠═cf9e03db-42b7-41f6-80ce-4b12ddb93211
+# ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
-# ╟─1ba7bbe5-7a85-454e-a9cf-deaf5f00d6ad
-# ╠═a141cd27-6ea0-4f73-80b5-72d8e5770ed4
-# ╠═d80f94c4-03d2-4aac-90f5-9415405b4412
-# ╟─ff0774a3-0737-48c0-8b7f-b901c553c279
+# ╟─12866252-a5c6-43d0-92f1-d52df5a2d949
+# ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
+# ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
+# ╟─675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
