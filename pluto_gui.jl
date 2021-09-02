@@ -32,6 +32,7 @@ export ob, ode,
        enz, enz_enz, enz_sub,
        enzyme_uwd, enzyme_generators
 
+sep_sym = "↦"
 ob(type, x) = codom(Open([first(x)], LabelledReactionNet{type,Number}(x), [first(x)])).ob;
 ob(x) = codom(Open([x], LabelledPetriNet(x), [x])).ob;
 
@@ -47,13 +48,13 @@ function inactivate(in,on::T) where T
 end;
 
 function bindunbind(in1, in2, on::T, off::T) where T
-  out = Symbol(first(in1),first(in2))
-  Open(LabelledReactionNet{T,Number}(unique((in1, in2,out=>0)), ((Symbol(:bind_,first(in1),first(in2)),on),(first(in1),first(in2))=>out),
+  out = Symbol(first(in1), sep_sym,first(in2))
+  Open(LabelledReactionNet{T,Number}(unique((in1, in2,out=>0)), ((Symbol(:bind_,first(in1), sep_sym,first(in2)),on),(first(in1),first(in2))=>out),
                                                                 ((Symbol(:unbind_,out),off),out=>(first(in1),first(in2)))))
 end;
 
 function degrade(prod1,prod2,on::T) where T
-  in = Symbol(first(prod1),first(prod2))
+  in = Symbol(first(prod1), sep_sym,first(prod2))
   prod2str = String(first(prod2))
   degprod2 = Symbol(endswith(prod2str, "inact") ? first(prod2str) : prod2str, :_deg)
   Open(LabelledReactionNet{T,Number}(unique((in=>0, prod1,degprod2=>0)), ((Symbol(:deg_,in),on),in=>(first(prod1),degprod2))));
@@ -65,13 +66,13 @@ function inactivate(in)
 end;
 
 function bindunbind(in1, in2)
-  out = Symbol(in1,in2)
-  Open(LabelledPetriNet(unique((in1, in2,out)), (Symbol(:bind_,in1,in2),(in1,in2)=>out),
+  out = Symbol(in1, sep_sym,in2)
+  Open(LabelledPetriNet(unique((in1, in2,out)), (Symbol(:bind_,in1, sep_sym,in2),(in1,in2)=>out),
                                                 (Symbol(:unbind_,out),out=>(in1,in2))))
 end;
 
 function degrade(prod1,prod2)
-  in = Symbol(prod1,prod2)
+  in = Symbol(prod1, sep_sym,prod2)
   prod2str = String(prod2)
   degprod2 = Symbol(endswith(prod2str, "inact") ? first(prod2str) : prod2str, :_deg)
   Open(LabelledPetriNet(unique((in, prod1,degprod2)), (Symbol(:deg_,in),in=>(prod1,degprod2))));
@@ -110,22 +111,22 @@ function enz(rxns, cat)
     :X=>ob(obtype, cat),
     :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
     :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
-    :XX=>ob(obtype, Symbol(catsym,catsym)=>0),
-    :XXinact=>ob(obtype, Symbol(catsym,catsym,:_inact)=>0)))
+    :XX=>ob(obtype, Symbol(catsym, sep_sym,catsym)=>0),
+    :XXinact=>ob(obtype, Symbol(catsym, sep_sym,catsym,:_inact)=>0)))
   bundle_legs(out, [[1,2,3]])
 end
 
 function enz_sub(rxns, cat1, sub)
   catsym = first(cat1)
   subsym = first(sub)
-  catsub = Symbol(catsym, subsym)
+  catsub = Symbol(catsym, sep_sym, subsym)
   obtype = valtype(rates(apex(first(last(first(rxns))))))
   out = oapply(enzXsubY, Dict([:bindXY, :degXY] .=> rxns[catsub]), Dict(
     :X=>ob(obtype, cat1),
     :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
     :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
     :Y=>ob(obtype, sub),
-    :XY=>ob(obtype, Symbol(catsym,subsym)=>0),
+    :XY=>ob(obtype, Symbol(catsym,sep_sym,subsym)=>0),
     :Ydeg=>ob(obtype, Symbol(subsym,:_deg)=>0)))
   bundle_legs(out, [[1,2,3], [4,5]])
 end
@@ -133,7 +134,7 @@ end
 function enz_enz(rxns, cat1, cat2)
   cat1sym = first(cat1)
   cat2sym = first(cat2)
-  catcat = Symbol(cat1sym, cat2sym)
+  catcat = Symbol(cat1sym, sep_sym, cat2sym)
   obtype = valtype(rates(apex(first(last(first(rxns))))))
   out = oapply(enzXY, Dict([:bindXY, :degXY, :bindXYinact, :degXYinact] .=> rxns[catcat]), Dict(
     :X=>ob(obtype, cat1),
@@ -155,21 +156,21 @@ function enz(cat::Symbol)
     :X=>ob(cat),
     :Xinact=>ob(Symbol(catsym,:_inact)),
     :Xdeg=>ob(Symbol(catsym,:_deg)),
-    :XX=>ob(Symbol(catsym,catsym)),
-    :XXinact=>ob(Symbol(catsym,catsym,:_inact))))
+    :XX=>ob(Symbol(catsym, sep_sym,catsym)),
+    :XXinact=>ob(Symbol(catsym, sep_sym,catsym,:_inact))))
   bundle_legs(out, [[1,2,3]])
 end
 
 function enz_sub(cat1::Symbol, sub::Symbol)
   catsym = cat1
   subsym = sub
-  catsub = Symbol(catsym, subsym)
+  catsub = Symbol(catsym, sep_sym, subsym)
   out = oapply(enzXsubY, Dict(:bindXY=>bindunbind(cat1, sub), :degXY=>degrade(cat1, sub)), Dict(
     :X=>ob(cat1),
     :Xinact=>ob(Symbol(catsym,:_inact)),
     :Xdeg=>ob(Symbol(catsym,:_deg)),
     :Y=>ob(sub),
-    :XY=>ob(Symbol(catsym,subsym)),
+    :XY=>ob(Symbol(catsym, sep_sym,subsym)),
     :Ydeg=>ob(Symbol(subsym,:_deg))))
   bundle_legs(out, [[1,2,3], [4,5]])
 end
@@ -177,7 +178,7 @@ end
 function enz_enz(cat1::Symbol, cat2::Symbol)
   cat1sym = cat1
   cat2sym = cat2
-  catcat = Symbol(cat1sym, cat2sym)
+  catcat = Symbol(cat1sym, sep_sym, cat2sym)
   out = oapply(enzXY, Dict(:bindXY=>bindunbind(cat1, cat2), :degXY=>degrade(cat1, cat2), :bindXYinact=>bindunbind(cat1, Symbol(cat2, :_inact)), :degXYinact=>degrade(cat1, Symbol(cat2, :_inact))), Dict(
     :X=>ob(cat1),
     :Xinact=>ob(Symbol(cat1sym,:_inact)),
@@ -414,63 +415,66 @@ begin
   Linact = :L_inact=>0;
   E = :E=>700000;
   G = :G=>714000;
-  P = :P=>66000;
+  Spike = :Spike=>66000;
+
+  cats = [:K, :S, :L]
+  subs = [:E, :G, :Spike]
 
   # Parameter Rates (units of pM and min)
   rxns = Dict(
-    :K => [inactivate(K, 7.494e-10)
+    "K" => [inactivate(K, 7.494e-10)
            bindunbind(K, K, 7.814e-4, 3.867e-3)
            degrade(K, K, 2.265e-1)
            bindunbind(K, Kinact, 7.814e-4, 3.867e-3)
            degrade(K, Kinact, 2.265e-1)],
-    :S => [inactivate(S, 1.906e-2)
+    "S" => [inactivate(S, 1.906e-2)
            bindunbind(S, S, 3.534e-7, 1.688e2)
            degrade(S, S, 1.433e1)
            bindunbind(S, Sinact, 3.534e-7, 1.688e2)
            degrade(S, Sinact, 1.433e1)],
-    :L => [inactivate(L, 7.810e-3)
+    "L" => [inactivate(L, 7.810e-3)
            bindunbind(L, L, 1.000e-11, 7.440e3)
            degrade(L, L, 2.670e2)
            bindunbind(L, Linact, 1.000e-11, 7.440e3)
            degrade(L, Linact, 2.670e2)],
-    :KE => [bindunbind(K, E, 9.668e-6,1.000e-2)
+    "K↦E" => [bindunbind(K, E, 9.668e-6,1.000e-2)
             degrade(K, E, 1.728e0)],
-    :KG => [bindunbind(K, G, 2.764e-6, 8.780e-1)
+    "K↦G" => [bindunbind(K, G, 2.764e-6, 8.780e-1)
             degrade(K, G, 1.502e0)],
-    :SE => [bindunbind(S, E, 4.197e-7, 1.06e-3)
+    "S↦E" => [bindunbind(S, E, 4.197e-7, 1.06e-3)
             degrade(S, E, 1.384e4)],
-    :SG => [bindunbind(S, G, 5.152e-8, 3.894e-3)
+    "S↦G" => [bindunbind(S, G, 5.152e-8, 3.894e-3)
             degrade(S, G, 8.755e-1)],
-    :LE => [bindunbind(L, E, 1.977e-8, 1.000e-2)
+    "L↦E" => [bindunbind(L, E, 1.977e-8, 1.000e-2)
             degrade(L, E, 1.066e2)],
-    :LG => [bindunbind(L, G, 3.394e-8, 2.365e1)
+    "L↦G" => [bindunbind(L, G, 3.394e-8, 2.365e1)
             degrade(L, G, 4.352e0)],
-    :KS => [bindunbind(K, S, 8.822e-4, 4.114e5)
+    "K↦S" => [bindunbind(K, S, 8.822e-4, 4.114e5)
             degrade(K, S, 9.000e-10)
             bindunbind(K, Sinact, 8.822e-4, 4.114e5)
             degrade(K, Sinact, 9.000e-10)],
-    :KL => [bindunbind(K, L, 1.756e-4, 3.729e4)
+    "K↦L" => [bindunbind(K, L, 1.756e-4, 3.729e4)
             degrade(K, L, 6.505e6)
             bindunbind(K, Linact, 1.756e-4, 3.729e4)
             degrade(K, Linact, 6.505e6)],
-    :SK => [bindunbind(S, K, 3.679e-4, 1.562e3)
+    "S↦K" => [bindunbind(S, K, 3.679e-4, 1.562e3)
             degrade(S, K, 4.410e2)
             bindunbind(S, Kinact, 3.679e-4, 1.562e3)
             degrade(S, Kinact, 4.410e2)],
-    :SL => [bindunbind(S, L, 1.000e-3, 5.000e2)
+    "S↦L" => [bindunbind(S, L, 1.000e-3, 5.000e2)
             degrade(S, L, 1.000e-7)
             bindunbind(S, Linact, 1.000e-3, 5.000e2)
             degrade(S, Linact, 1.000e-7)],
-    :LK => [bindunbind(L, K, 1.000e-3, 4.118e3)
+    "L↦K" => [bindunbind(L, K, 1.000e-3, 4.118e3)
             degrade(L, K, 3.234e1)
             bindunbind(L, Kinact, 1.000e-3, 4.118e3)
             degrade(L, Kinact, 3.234e1)],
-    :LS => [bindunbind(L, S, 1.056e-12, 5.000e2)
+    "L↦S" => [bindunbind(L, S, 1.056e-12, 5.000e2)
             degrade(L, S, 5.000e-1)
             bindunbind(L, Sinact, 1.056e-12, 5.000e2)
             degrade(L, Sinact, 5.000e-1)]
   );
-
+  rxns = Dict(Symbol(k)=>v for (k,v) in rxns)
   # define labels to reaction network mappings
   functor(x) = oapply(x, Dict(
     :catK=>enz(rxns, K),
@@ -488,18 +492,20 @@ begin
     :catKsubG=>enz_sub(rxns, K,G),
     :catSsubG=>enz_sub(rxns, S,G),
     :catLsubG=>enz_sub(rxns, L,G)));
-  lfunctor(x) = oapply(x, enzyme_generators([:K,:S,:L],[:G,:E,:P]))
+  lfunctor(x) = oapply(x, enzyme_generators([:K,:S,:L],[:G,:E,:Spike]))
   def_model = apex(functor(enzyme_uwd([:K,:S,:L],[:G,:E])))
   def_rates = rates(def_model)
   def_concs = Dict(c=>concentrations(def_model)[c] for c in snames(def_model))
-  def_concs[:P] = P[2]
-  def_concs[:P_deg] = 0
-  def_concs[:KP] = 0
+  def_concs[:Spike] = Spike[2]
+  def_concs[:Spike_deg] = 0
+  def_concs[Symbol("K↦Spike")] = 0
+  def_concs[Symbol("S↦Spike")] = 0
+  def_concs[Symbol("L↦Spike")] = 0
   nothing
 end
 
 # ╔═╡ 56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
-begin 
+begin
 	function formatSymbArr(arr)
 		B = Array{Symbol}(undef, length(arr))
 		for i in 1:length(arr)
@@ -507,17 +513,17 @@ begin
 		end
 		return B
 	end
-	
-	
+
+
 	function formatStrArr(arr)
 		B = Array{String}(undef, length(arr))
 		for i in 1:length(arr)
 			 B[i] = String(arr[i])
 		end
-		return B		
-		
+		return B
+
 	end
-	
+
 	function combineConc(df)
 		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
 		cols = names(df)
@@ -542,15 +548,15 @@ begin
 					println("Value added: ", df[10,cols[j]])
 					arr = arr .+ df[!,cols[j]]
 					println("arr after: ",arr[10] )
-					
+
 				end
 			end
-			
+
 			colname = string(chems[i])
-			
+
 			dff[!,colname] = arr
 		end
-		
+
 		return dff
 	end
 end
@@ -574,11 +580,12 @@ begin
 	end
 	m_rates = Dict(Symbol(k)=>k_rates[k] for k in keys(k_rates))
 	valid_enz_sub = Set{Symbol}()
-	for k in keys(m_rates)
-		post = last(split("$k", "_"))
-		if length(post) == 2
-			push!(valid_enz_sub, Symbol(post[1]))
-			push!(valid_enz_sub, Symbol(post[2]))
+	for e in cats
+		for s in vcat(cats, subs)
+      if Symbol("bind_$e↦$s") ∈ keys(m_rates)
+				push!(valid_enz_sub, e)
+				push!(valid_enz_sub, s)
+			end
 		end
 	end
 	status
@@ -614,11 +621,11 @@ begin
 
 	local boxes = Dict(:G=>md"G $(@bind gbox CheckBox(:G ∈ valid_enz_sub))",
 				 :E=>md"E $(@bind ebox CheckBox(:E ∈ valid_enz_sub && false))",
-				 :P=>md"P $(@bind pbox CheckBox(:P ∈ valid_enz_sub))")
+				 :Spike=>md"Spike $(@bind pbox CheckBox(:Spike ∈ valid_enz_sub))")
 md"""
 $(:G ∈ valid_enz_sub ? boxes[:G] : md"")
 $(:E ∈ valid_enz_sub ? boxes[:E] : md"")
-$(:P ∈ valid_enz_sub ? boxes[:P] : md"")
+$(:Spike ∈ valid_enz_sub ? boxes[:Spike] : md"")
 """
 end
 
@@ -635,7 +642,7 @@ inpF = Symbol[];
 	end
 
 outp = [gbox, ebox, pbox];
-outSymb = [:G, :E, :P];
+outSymb = [:G, :E, :Spike];
 outF = Symbol[];
 	for i = 1:3
 		if outp[i]
@@ -674,7 +681,7 @@ begin
 <output>1</output></li>
 ==#
 c = vcat(["$(m_rates[k])" for k in tnames(model)], ["$(def_concs[k])" for k in snames(model)]);
-	
+
 form_vals = HTML("""
 <bond def = "c">
 <form>
@@ -821,10 +828,10 @@ function returnStrings(s,arr){
 			if(arr[item].includes(s) == true){
 				finalArr.push(arr[item])
 				}
-			
+
 			}
 		return finalArr
-		
+
 		}
 function generateBindingTable(){
 
@@ -836,7 +843,7 @@ function generateBindingTable(){
 		for (let i in keyNames){
 
 		   let nm = keyNames[i]
-			
+
 			if(nm.substring(0,4) == 'bind'){
 				bindArr.push(nm)
 		}else if(nm.substring(0,6) == 'unbind'){
@@ -851,25 +858,25 @@ function generateBindingTable(){
 			//grab values from sliders
 	    let x = form.getElementsByClassName('sliderval');
 		let xarr = Array.from(x, (v,_)=>{return v.value})
-		
+
 		//Loop over bind and unbind arrays to do calculations
 		for(let i in keyNames){
 
 			if(keyNames[i].substring(0,4) == 'bind'){
-		
+
 			let bind = keyNames[i]
 			for(let j in keyNames){
 		    if(keyNames[j].substring(0,6) == 'unbind'){
-		
+
 				let unbind = keyNames[j]
 					if(bind.substring(5,bind.length) == unbind.substring(7,unbind.length)){
 								kdArr.push(xarr[j]/xarr[i])
 						kdNames.push('Kd_'+bind.substring(5,bind.length))
 		//Create name of deg
-		
+
 		let nm = bind.substring(4,bind.length)
 		let deg_name = 'deg' + nm
-		
+
 			for(let k in keyNames){
 				if(keyNames[k]== deg_name){
 						let kcat = keyNames[k]
@@ -878,32 +885,32 @@ function generateBindingTable(){
 						let bindval = parseFloat(xarr[i])
 						let catval = parseFloat(xarr[k])
 						let k_m = (catval+unbindval)/bindval;
-                        
+
 
 						kdArr.push(k_m)
 						kdNames.push('Km_'+bind.substring(5,bind.length))
 						kdArr.push(catval/k_m)
 						kdNames.push('Cat_efficieny_'+bind.substring(5,bind.length))
-						
+
 							}
 						}}}
 					}
 				}
 			}
 
-		
+
 		const list3 = form.querySelector('#bindingAffTable')
 		while(list3.rows.length > 0) {
 				  list3.deleteRow(0);
 				}
-		
+
 		var header = document.createElement('thead')
  		var toprow = document.createElement('tr');
 		var toprowItem = document.createElement('th');
 		var toprowItem2 = document.createElement('th');
 		var toprowItem3 = document.createElement('th');
 		var toprowItem4 = document.createElement('th');
-		
+
 		toprowItem.innerText = 'Name';
 		toprowItem2.innerText = 'Kd';
 		toprowItem3.innerText = 'Km';
@@ -917,16 +924,16 @@ function generateBindingTable(){
 		list3.appendChild(toprow);
 
 		for (let i = 0; i < kdNames.length/3; i++){
-		  
+
 		  var item = document.createElement('tr');
 		  var label = document.createElement('td');
 		  label.innerText = kdNames[i*3].substring(3)
 		  var label2 = document.createElement('td');
 		  var label3 = document.createElement('td');
 		  var label4 = document.createElement('td');
-		
+
 		  label2.innerText =  kdArr[i*3].toExponential(2)
-		  
+
 		label3.innerText = kdArr[i*3+1].toExponential(2) // 'placeholder'
 		label4.innerText = kdArr[i*3+2].toExponential(2) // 'placeholder'
 		  item.appendChild(header)
@@ -997,13 +1004,13 @@ for ( var r in conc ){
   slider.setAttribute('step', '0.01');
   console.log('concentration')
   console.log(conc[r]);
-		
+
   let test = conc[r];
   if(test == 0){
 		test = .000001
 		}
   slider.setAttribute('oninput', `this.parentElement.nextElementSibling.children[0].value=((10**this.value)*\${test}).toExponential(2)`);
-		
+
 
   slider_box.appendChild(slider)
   slider_val_box.appendChild(slider_val)
@@ -1193,7 +1200,7 @@ begin
 	# sol2.u
 	CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
 	else
-		
+
 		df = DataFrame(sol2)
 		nms = collect(keys(sol2(0)))
 	prepend!(nms,[:timestamp])
@@ -1203,7 +1210,7 @@ begin
 	dfFin = select(df,finKeys)
 		CSV.write("sim_res.csv", dfFin)
 	end
-	
+
 	md""" Download simulation data:  $(DownloadButton(read("sim_res.csv"), "sim_results.csv")) """
 end
 
@@ -1221,7 +1228,7 @@ end
 begin
   if c != 0
 	if combineCheck == false
-	  tsteps = sol.t 
+	  tsteps = sol.t
 	  # labels = [:G_deg]
 		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
 	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
@@ -1233,9 +1240,9 @@ begin
 			rename!(dfs,S_labels)
 			# names(dfs)[1][1]
 			dff = combineConc(dfs)
-			
+
 			labels_new = names(dff)[2:end]
-			
+
 			println(labels_new)
 			timesteps = dff[!,"timestamp"]
 			dff[!,2:end]
@@ -1243,7 +1250,7 @@ begin
 			plot(timesteps,data, label = reshape(labels_new, (1,length(labels_new))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
 			# Vector(labels_new)
 		end
-		
+
 	end
 
 end
