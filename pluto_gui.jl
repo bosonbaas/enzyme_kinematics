@@ -1195,9 +1195,6 @@ onsubmit()
 
 end
 
-# ╔═╡ f38a631d-b79e-4c26-b9ad-373afc09f828
-# md"""Filter chemicals? $(@bind filterCheck CheckBox(false))"""
-
 # ╔═╡ 043f7a23-3b59-4e34-a8d3-9853cc66c228
 md"""Filter Inact? $(@bind filterInact CheckBox(false)) \
 Filter degraded? $(@bind filterDeg CheckBox(false))
@@ -1310,27 +1307,37 @@ end
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 begin
   if c != 0
-	if combineCheck == false
-	  tsteps = sol.t
-	  # labels = [:G_deg]
-		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
-		else
-			labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-			S_labels = formatStrArr(labels)
-			prepend!(S_labels,["timestamp"])
-			dfs = DataFrame(sol)
-			rename!(dfs,S_labels)
-			# names(dfs)[1][1]
-			dff = combineConc(dfs)
-
-			labels_new = names(dff)[2:end]
-
-			println(labels_new)
-			timesteps = dff[!,"timestamp"]
-			dff[!,2:end]
-			data = Matrix(dff[!,2:end])/1e3
+		
+		if filterInact == true || filterDeg == true
+			timesteps = dfFin[!,"timestamp"]
+			data = Matrix(dfFin[!,2:end])/1e3
+			labels_new = names(dfFin)[2:end]
 			plot(timesteps,data, label = reshape(labels_new, (1,length(labels_new))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+			
+		elseif combineCheck == false
+		  tsteps = sol.t
+		  # labels = [:G_deg]
+			labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+		  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
+
+		else
+			graphKeySymb2 = Symbol[]
+			labels2 = isempty(graphKeySymb2) ? snames(model) : graphKeySymb2
+			println(labels2)
+			S_labels2 = formatStrArr(labels2)
+			prepend!(S_labels2,["timestamp"])
+			dfs2 = DataFrame(sol)
+			rename!(dfs2,S_labels2)
+			# names(dfs)[1][1]
+			dff2 = combineConc(dfs2)
+
+			labels_new2 = names(dff2)[2:end]
+
+			println(labels_new2)
+			timesteps2 = dff2[!,"timestamp"]
+			dff2[!,2:end]
+			data2 = Matrix(dff2[!,2:end])/1e3
+			plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
 			# Vector(labels_new)
 		end
 
@@ -1346,32 +1353,31 @@ end
 
 # ╔═╡ Cell order:
 # ╟─32c8703f-6aa3-46be-a91b-ff36225d6bd8
-# ╟─178e764e-e239-4689-bb2f-4993b7755724
-# ╟─4c9c24cc-b865-4825-a841-f717120d27d2
-# ╟─563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
-# ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
-# ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
-# ╟─93df89f0-8429-4fcc-bd01-6982417f5134
+# ╠═178e764e-e239-4689-bb2f-4993b7755724
+# ╠═4c9c24cc-b865-4825-a841-f717120d27d2
+# ╠═563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
+# ╠═2d89b8e5-31a0-402c-b95c-87494a5a1317
+# ╠═3779b846-e5ec-4239-a1d4-af2f8c2f10eb
+# ╠═93df89f0-8429-4fcc-bd01-6982417f5134
 # ╠═56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
 # ╟─fe9b889d-79c2-493b-9426-e33e6820cd90
 # ╟─950d3b4e-f957-45b6-aa80-e3dfc765aad0
 # ╟─50334069-a50c-467c-94ae-63b9b2264a18
 # ╟─ddc141ba-d2e8-4ac4-8bc3-12fb1bb9fd4d
-# ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
+# ╠═4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
-# ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
-# ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
-# ╟─e6589d31-dce7-42c3-b494-db03fe561ae9
+# ╠═dcdb88ef-f04f-4ee8-87cc-bb26f396f064
+# ╠═d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
+# ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
-# ╟─066b7505-e21b-467e-86c1-cea1ff80246e
+# ╠═066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─12866252-a5c6-43d0-92f1-d52df5a2d949
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
-# ╠═f38a631d-b79e-4c26-b9ad-373afc09f828
 # ╟─043f7a23-3b59-4e34-a8d3-9853cc66c228
 # ╟─1596bc9f-f7e4-4d3d-9978-9da4eecbaede
 # ╟─675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
-# ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
-# ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
-# ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
+# ╠═afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
+# ╠═ad8edd69-c164-4221-bdee-e7c9381ffcab
+# ╠═9625798a-67df-49e4-91ce-c7e23ed2a177
