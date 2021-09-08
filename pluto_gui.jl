@@ -507,6 +507,7 @@ end
 # ╔═╡ 56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
 begin
 	function formatSymbArr(arr)
+		#Change string array to symbol
 		B = Array{Symbol}(undef, length(arr))
 		for i in 1:length(arr)
 			 B[i] = Symbol(arr[i])
@@ -516,6 +517,7 @@ begin
 
 
 	function formatStrArr(arr)
+		#Change symbol array to string
 		B = Array{String}(undef, length(arr))
 		for i in 1:length(arr)
 			 B[i] = String(arr[i])
@@ -528,26 +530,30 @@ begin
 		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
 		cols = names(df)
 		# println(cols)
-		chems = Array{Char}(undef, 0)
+		chems = Array{String}(undef, 0)
 		for i in 2:length(cols)
 
-			letter = cols[i][1]
-			# println(letter)
+			# letter = cols[i][1]
+			letter = split(cols[i],"↦")[1]
+			println(split(cols[i],"↦")[1])
 			append!(chems,[letter])
 		end
 		unique!(chems)
-		# println(chems)
+		println(chems)
 		dff = DataFrame()
 		dff.timestamp = df[!,"timestamp"]
 		for i in 1:length(chems)
 			arr = zeros(length(dff.timestamp))
 			println("new chem")
 			for j in 2:length(cols)
-				if chems[i] == cols[j][1]
-					println("arr before: ",arr[10] )
-					println("Value added: ", df[10,cols[j]])
+				letter2 = split(cols[j],"↦")[1]
+				# if chems[i] == cols[j][1]
+				println(letter2)
+				if chems[i] == letter2
+					# println("arr before: ",arr[10] )
+					# println("Value added: ", df[10,cols[j]])
 					arr = arr .+ df[!,cols[j]]
-					println("arr after: ",arr[10] )
+					# println("arr after: ",arr[10] )
 
 				end
 			end
@@ -1189,6 +1195,31 @@ onsubmit()
 
 end
 
+# ╔═╡ f38a631d-b79e-4c26-b9ad-373afc09f828
+# md"""Filter chemicals? $(@bind filterCheck CheckBox(false))"""
+
+# ╔═╡ 043f7a23-3b59-4e34-a8d3-9853cc66c228
+md"""Filter Inact? $(@bind filterInact CheckBox(false)) \
+Filter degraded? $(@bind filterDeg CheckBox(false))
+"""
+
+
+# ╔═╡ 1596bc9f-f7e4-4d3d-9978-9da4eecbaede
+begin
+	filter_list = [];
+	
+if filterInact == true || filterDeg == true
+	if filterInact == true
+			append!(filter_list,["inact"]);
+	end
+	if filterDeg == true
+			append!(filter_list,["deg"]);
+	end
+		
+end
+	nothing;
+end
+
 # ╔═╡ 675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
 md"""Export only selected variables? $(@bind importCheck CheckBox(false))"""
 
@@ -1196,17 +1227,69 @@ md"""Export only selected variables? $(@bind importCheck CheckBox(false))"""
 begin
 		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
 	if importCheck == false
-
-	# sol2.u
-	CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
-	else
-
-		df = DataFrame(sol2)
-		nms = collect(keys(sol2(0)))
+	
+	df = DataFrame(sol2)
+	nms = collect(keys(sol2(0)))
 	prepend!(nms,[:timestamp])
 	rename!(df,nms)
-	finKeys = formatSymbArr(graphKeys)
+	nmsStr = formatStrArr(nms)
+	filtered_names = []	
+	filtered_names_inx = []
+	
+	if length(filter_list) > 0
+		for i in 1:length(filter_list)
+			name = filter_list[i]
+				println(name)
+				for j in 1:length(nmsStr)
+					
+					if occursin(name,nmsStr[j]) == true
+						append!(filtered_names_inx,[j])
+					end
+				end
+		end
+	end
+	sort!(unique!(filtered_names_inx))
+	deleteat!(nmsStr,filtered_names_inx)
+	# intersect!(nmsStr,graphKeys)
+	println(nmsStr)
+	finKeys = formatSymbArr(nmsStr)
+	# prepend!(finKeys,[:timestamp])
+	println(finKeys)
+	dfFin = select(df,finKeys)
+		CSV.write("sim_res.csv", dfFin)
+		
+		
+	# sol2.u
+	# CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
+	else
+
+	df = DataFrame(sol2)
+	nms = collect(keys(sol2(0)))
+	prepend!(nms,[:timestamp])
+	rename!(df,nms)
+		nmsStr = formatStrArr(nms)
+	filtered_names = []	
+	filtered_names_inx = []
+	
+	if length(filter_list) > 0
+		for i in 1:length(filter_list)
+			name = filter_list[i]
+				println(name)
+				for j in 1:length(nmsStr)
+					
+					if occursin(name,nmsStr[j]) == true
+						append!(filtered_names_inx,[j])
+					end
+				end
+		end
+	end
+	sort!(unique!(filtered_names_inx))
+	deleteat!(nmsStr,filtered_names_inx)
+	intersect!(nmsStr,graphKeys)
+	
+	finKeys = formatSymbArr(nmsStr)
 	prepend!(finKeys,[:timestamp])
+	# println(finKeys)
 	dfFin = select(df,finKeys)
 		CSV.write("sim_res.csv", dfFin)
 	end
@@ -1269,7 +1352,7 @@ end
 # ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
 # ╟─93df89f0-8429-4fcc-bd01-6982417f5134
-# ╟─56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
+# ╠═56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
 # ╟─fe9b889d-79c2-493b-9426-e33e6820cd90
 # ╟─950d3b4e-f957-45b6-aa80-e3dfc765aad0
 # ╟─50334069-a50c-467c-94ae-63b9b2264a18
@@ -1285,6 +1368,9 @@ end
 # ╟─12866252-a5c6-43d0-92f1-d52df5a2d949
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
+# ╠═f38a631d-b79e-4c26-b9ad-373afc09f828
+# ╟─043f7a23-3b59-4e34-a8d3-9853cc66c228
+# ╟─1596bc9f-f7e4-4d3d-9978-9da4eecbaede
 # ╟─675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
