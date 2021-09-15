@@ -504,69 +504,6 @@ begin
   nothing
 end
 
-# ╔═╡ 56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
-begin
-	function formatSymbArr(arr)
-		#Change string array to symbol
-		B = Array{Symbol}(undef, length(arr))
-		for i in 1:length(arr)
-			 B[i] = Symbol(arr[i])
-		end
-		return B
-	end
-
-
-	function formatStrArr(arr)
-		#Change symbol array to string
-		B = Array{String}(undef, length(arr))
-		for i in 1:length(arr)
-			 B[i] = String(arr[i])
-		end
-		return B
-
-	end
-
-	function combineConc(df)
-		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
-		cols = names(df)
-		# println(cols)
-		chems = Array{String}(undef, 0)
-		for i in 2:length(cols)
-
-			# letter = cols[i][1]
-			letter = split(cols[i],"↦")[1]
-			println(split(cols[i],"↦")[1])
-			append!(chems,[letter])
-		end
-		unique!(chems)
-		println(chems)
-		dff = DataFrame()
-		dff.timestamp = df[!,"timestamp"]
-		for i in 1:length(chems)
-			arr = zeros(length(dff.timestamp))
-			println("new chem")
-			for j in 2:length(cols)
-				letter2 = split(cols[j],"↦")[1]
-				# if chems[i] == cols[j][1]
-				println(letter2)
-				if chems[i] == letter2
-					# println("arr before: ",arr[10] )
-					# println("Value added: ", df[10,cols[j]])
-					arr = arr .+ df[!,cols[j]]
-					# println("arr after: ",arr[10] )
-
-				end
-			end
-
-			colname = string(chems[i])
-
-			dff[!,colname] = arr
-		end
-
-		return dff
-	end
-end
-
 # ╔═╡ fe9b889d-79c2-493b-9426-e33e6820cd90
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
 
@@ -669,8 +606,8 @@ begin
 end
 
 # ╔═╡ cf9e03db-42b7-41f6-80ce-4b12ddb93211
-begin
-  model = uwd |> lfunctor |> apex;
+begin 
+model = uwd |> lfunctor |> apex;
   r = join(["'$k': $(m_rates[k])" for k in tnames(model)], ", ");
 
   r2 = join(["'$k': $(def_concs[k])" for k in snames(model)], ", ");
@@ -691,33 +628,24 @@ c = vcat(["$(m_rates[k])" for k in tnames(model)], ["$(def_concs[k])" for k in s
 form_vals = HTML("""
 <bond def = "c">
 <form>
-
   <div id ="myDIV" style='height:500px;overflow:scroll'>
-
   <h4>Adjust Rates</h4>
   <table>
   </table>
-
-
-
   </div>
  <div id ="concDiv" style='height:500px;overflow:scroll'>
 		<h4>Adjust Concentrations</h4>
 		<table id = "table2">
 		</table>
 	</div>
-
  <div id ="bindingAff" style='height:500px;overflow:scroll'>
 		<h4>Binding Affinities</h4>
 		<table id = "bindingAffTable">
 		</table>
 	</div>
-
-
 </form>
 </bond>
 <style>
-
 #myDIV {
   width: 100%;
   padding: 50px 0;
@@ -733,7 +661,6 @@ form_vals = HTML("""
   margin-top: 20px;
   display: none
 }
-
 #bindingAff {
   width: 100%;
   padding: 50px 0;
@@ -742,7 +669,6 @@ form_vals = HTML("""
   margin-top: 20px;
   display: none
 }
-
 .button {
   background-color: #003057;
   border: none;
@@ -758,7 +684,6 @@ form_vals = HTML("""
 .button:focus {
     background-color:#BFB37C;
 }
-
 .slider {
   -webkit-appearance: none;
   width: 100%;
@@ -770,7 +695,6 @@ form_vals = HTML("""
   -webkit-transition: .2s;
   transition: opacity .2s;
 }
-
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -780,7 +704,6 @@ form_vals = HTML("""
   background:  #BFB37C;
   cursor: pointer;
 }
-
 .slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
@@ -788,14 +711,9 @@ form_vals = HTML("""
   background: #003057;
   cursor: pointer;
 }
-
 </style>
-
-
-
 <script>
 //`currentScript` is the current script tag - we use it to select elements//
-
 function hideShowRate() {
 	var x = document.getElementById("myDIV");
 	var y = document.getElementById("concDiv");
@@ -803,9 +721,7 @@ function hideShowRate() {
 	z.style.display = "none";
 	x.style.display = "block";
 	y.style.display = "none"
-
 }
-
 function hideShowConc() {
 	var x = document.getElementById("concDiv");
 	var y = document.getElementById("myDIV");
@@ -813,9 +729,7 @@ function hideShowConc() {
 	x.style.display = "block";
 	y.style.display = "none"
 	z.style.display = "none"
-
 }
-
 function hideShowBind() {
 	var x = document.getElementById("bindingAff");
 	var y = document.getElementById("myDIV");
@@ -824,99 +738,73 @@ function hideShowBind() {
 	y.style.display = "none"
 	z.style.display = "none"
 	generateBindingTable()
-
 }
 function returnStrings(s,arr){
 		let finalArr = []
-
 		for (let item in arr){
-
 			if(arr[item].includes(s) == true){
 				finalArr.push(arr[item])
 				}
-
 			}
 		return finalArr
-
 		}
 function generateBindingTable(){
-
 		let keyNames = Object.keys(rates)
 		let objVals = Object.values(rates)
 		let bindArr = []
 		let unbindArr = []
-
 		for (let i in keyNames){
-
 		   let nm = keyNames[i]
-
 			if(nm.substring(0,4) == 'bind'){
 				bindArr.push(nm)
 		}else if(nm.substring(0,6) == 'unbind'){
 				unbindArr.push(nm)
 			}
-
-
 			}
-
 		let kdArr = []; //array of binding affinities
 		let kdNames = []; // array of binding affinity names
 			//grab values from sliders
 	    let x = form.getElementsByClassName('sliderval');
 		let xarr = Array.from(x, (v,_)=>{return v.value})
-
 		//Loop over bind and unbind arrays to do calculations
 		for(let i in keyNames){
-
 			if(keyNames[i].substring(0,4) == 'bind'){
-
 			let bind = keyNames[i]
 			for(let j in keyNames){
 		    if(keyNames[j].substring(0,6) == 'unbind'){
-
 				let unbind = keyNames[j]
 					if(bind.substring(5,bind.length) == unbind.substring(7,unbind.length)){
 								kdArr.push(xarr[j]/xarr[i])
 						kdNames.push('Kd_'+bind.substring(5,bind.length))
 		//Create name of deg
-
 		let nm = bind.substring(4,bind.length)
 		let deg_name = 'deg' + nm
-
 			for(let k in keyNames){
 				if(keyNames[k]== deg_name){
 						let kcat = keyNames[k]
-
 						let unbindval = parseFloat(xarr[j]);
 						let bindval = parseFloat(xarr[i])
 						let catval = parseFloat(xarr[k])
 						let k_m = (catval+unbindval)/bindval;
-
-
 						kdArr.push(k_m)
 						kdNames.push('Km_'+bind.substring(5,bind.length))
 						kdArr.push(catval/k_m)
 						kdNames.push('Cat_efficieny_'+bind.substring(5,bind.length))
-
 							}
 						}}}
 					}
 				}
 			}
-
-
 		const list3 = form.querySelector('#bindingAffTable')
 		while(list3.rows.length > 0) {
 				  list3.deleteRow(0);
 				}
-
 		var header = document.createElement('thead')
  		var toprow = document.createElement('tr');
 		var toprowItem = document.createElement('th');
 		var toprowItem2 = document.createElement('th');
 		var toprowItem3 = document.createElement('th');
 		var toprowItem4 = document.createElement('th');
-
 		toprowItem.innerText = 'Name';
 		toprowItem2.innerText = 'Kd';
 		toprowItem3.innerText = 'Km';
@@ -928,18 +816,14 @@ function generateBindingTable(){
 		toprow.appendChild(toprowItem3);
 		toprow.appendChild(toprowItem4);
 		list3.appendChild(toprow);
-
 		for (let i = 0; i < kdNames.length/3; i++){
-
 		  var item = document.createElement('tr');
 		  var label = document.createElement('td');
 		  label.innerText = kdNames[i*3].substring(3)
 		  var label2 = document.createElement('td');
 		  var label3 = document.createElement('td');
 		  var label4 = document.createElement('td');
-
 		  label2.innerText =  kdArr[i*3].toExponential(2)
-
 		label3.innerText = kdArr[i*3+1].toExponential(2) // 'placeholder'
 		label4.innerText = kdArr[i*3+2].toExponential(2) // 'placeholder'
 		  item.appendChild(header)
@@ -948,23 +832,16 @@ function generateBindingTable(){
 		  item.appendChild(label3)
 		  item.appendChild(label4)
 		  list3.appendChild(item)
-
 		}
-
 		}
 const form = currentScript.parentElement.querySelector('form')
 const list = form.querySelector('table')
 var rates = {$r};
 var conc = {$r2};
-
-
-
-
 for ( var r in rates ){
   console.log(r);
   var item = document.createElement('tr');
   var label = document.createElement('th');
-
   label.innerText = r
   var slider_box = document.createElement('td');
   var slider_val_box = document.createElement('td');
@@ -987,7 +864,6 @@ for ( var r in rates ){
   item.appendChild(slider_val_box)
   list.appendChild(item)
 }
-
 const list2 = form.querySelector('#table2')
 for ( var r in conc ){
   console.log(r);
@@ -1000,7 +876,6 @@ for ( var r in conc ){
   var slider_val = document.createElement('input');
   slider_val.setAttribute('type', 'text');
   slider_val.setAttribute('class', 'sliderval');
-
   slider_val.value = conc[r].toExponential(2);
   slider.setAttribute('type', 'range');
   slider.setAttribute('class', 'slider');
@@ -1010,14 +885,11 @@ for ( var r in conc ){
   slider.setAttribute('step', '0.01');
   console.log('concentration')
   console.log(conc[r]);
-
   let test = conc[r];
   if(test == 0){
 		test = .000001
 		}
   slider.setAttribute('oninput', `this.parentElement.nextElementSibling.children[0].value=((10**this.value)*\${test}).toExponential(2)`);
-
-
   slider_box.appendChild(slider)
   slider_val_box.appendChild(slider_val)
   item.appendChild(label)
@@ -1025,9 +897,6 @@ for ( var r in conc ){
   item.appendChild(slider_val_box)
   list2.appendChild(item)
 }
-
-
-
 var x = form.getElementsByClassName('sliderval');
 function onsubmit(){
   // We send the value back to Julia //
@@ -1042,30 +911,25 @@ b.value = 'Update Plot';
 b.addEventListener('click', function() {onsubmit();console.log('hello from button')})
 form.appendChild(b)
 onsubmit()
-
 let sp2 = document.getElementById("myDIV")
-
 var d = document.createElement('input')
 d.setAttribute('type','button')
 d.setAttribute('class','button')
 d.value = 'Rates'
 d.addEventListener('click', function() {hideShowRate();})
 form.insertBefore(d,sp2)
-
 var e = document.createElement('input')
 e.setAttribute('type','button')
 e.setAttribute('class','button')
 e.value = 'Concentrations'
 e.addEventListener('click', function() {hideShowConc();})
 form.insertBefore(e,sp2)
-
 var f = document.createElement('input')
 f.setAttribute('type','button')
 f.setAttribute('class','button')
 f.value = 'Binding Affinities'
 f.addEventListener('click', function() {hideShowBind();})
 form.insertBefore(f,sp2)
-
 </script>
 """);
 end
@@ -1091,6 +955,18 @@ cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(
 sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
   nothing
 end
+
+# ╔═╡ 3f8db202-ac50-462d-b96d-ba629ca43325
+md"""### Iterate over multiple concentrations $(@bind multCheck CheckBox(false))
+#### Select chemical: 
+$(@bind veg Select(keyArrStr))
+
+Starting Concentration: $(@bind initConc TextField()) \
+End Concentration: $(@bind endConc TextField()) \
+number of steps: $(@bind stepsConc NumberField(1:10)) \
+Linear spacing $(@bind linCheck CheckBox(false)) logarithmic spacing $(@bind logCheck CheckBox(false))
+
+"""
 
 # ╔═╡ 12866252-a5c6-43d0-92f1-d52df5a2d949
 md"""Display total concentrations? $(@bind combineCheck CheckBox(false))"""
@@ -1220,6 +1096,131 @@ end
 # ╔═╡ 675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
 md"""Export only selected variables? $(@bind importCheck CheckBox(false))"""
 
+# ╔═╡ ad8edd69-c164-4221-bdee-e7c9381ffcab
+begin
+
+graphKeySymb = Symbol[]
+for item in graphKeys
+		push!(graphKeySymb,Symbol(item))
+
+end
+end
+
+# ╔═╡ 56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
+begin
+	function formatSymbArr(arr)
+		#Change string array to symbol
+		B = Array{Symbol}(undef, length(arr))
+		for i in 1:length(arr)
+			 B[i] = Symbol(arr[i])
+		end
+		return B
+	end
+
+
+	function formatStrArr(arr)
+		#Change symbol array to string
+		B = Array{String}(undef, length(arr))
+		for i in 1:length(arr)
+			 B[i] = String(arr[i])
+		end
+		return B
+
+	end
+
+	function combineConc(df)
+		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
+		cols = names(df)
+		# println(cols)
+		chems = Array{String}(undef, 0)
+		for i in 2:length(cols)
+
+			# letter = cols[i][1]
+			letter = split(cols[i],"↦")[1]
+			println(split(cols[i],"↦")[1])
+			append!(chems,[letter])
+		end
+		unique!(chems)
+		println(chems)
+		dff = DataFrame()
+		dff.timestamp = df[!,"timestamp"]
+		for i in 1:length(chems)
+			arr = zeros(length(dff.timestamp))
+			println("new chem")
+			for j in 2:length(cols)
+				letter2 = split(cols[j],"↦")[1]
+				# if chems[i] == cols[j][1]
+				println(letter2)
+				if chems[i] == letter2
+					# println("arr before: ",arr[10] )
+					# println("Value added: ", df[10,cols[j]])
+					arr = arr .+ df[!,cols[j]]
+					# println("arr after: ",arr[10] )
+
+				end
+			end
+
+			colname = string(chems[i])
+
+			dff[!,colname] = arr
+		end
+
+		return dff
+	end
+	
+	
+	function logrange(x1, x2, n) 
+		B = Float64[] 
+		startLog = log10(parse(Float64,x1))
+		endLog = log10(parse(Float64,x2))
+		
+		logvals = range(startLog,endLog,length = n)
+		for i in logvals
+			append!(B,10.0^i)	
+		end
+		return B
+		# return (10^y for y in range(log10(parse(Float64,x1)), log10(parse(Float64,x2)), length=n))
+		
+	end
+	
+	function createMultiArr(cur_conc,conList,veg)
+		multiConcArr = []
+		
+		for i in 1:length(conList)
+			tempArr = copy(cur_conc)
+			println(tempArr)
+			item = conList[i]
+			println(item)
+			tempArr[Symbol(veg[1])] = item
+			println(tempArr)
+			append!(multiConcArr,[tempArr])
+		end
+		return multiConcArr
+	end
+	
+	function createPlot(sol, model,current_conc)
+		tsteps = sol.t
+		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+		name = string("Starting Concentration: ", string(current_conc))
+	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...),title = name, linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
+		
+	end
+end
+
+
+
+# ╔═╡ d3a6dede-a10e-4552-9f3c-815c7ff9d06b
+begin 
+	if linCheck
+		conList = range(parse(Float64,initConc), parse(Float64,endConc), length = stepsConc)
+		
+	elseif logCheck
+		conList = logrange(initConc,endConc,stepsConc);
+		# println(conList)
+	end
+	nothing;
+end
+
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 begin
 		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
@@ -1292,14 +1293,34 @@ begin
 	md""" Download simulation data:  $(DownloadButton(read("sim_res.csv"), "sim_results.csv")) """
 end
 
-# ╔═╡ ad8edd69-c164-4221-bdee-e7c9381ffcab
+# ╔═╡ f7632708-7a0f-4c18-9f0b-44fb49aaeaa0
 begin
-
-graphKeySymb = Symbol[]
-for item in graphKeys
-		push!(graphKeySymb,Symbol(item))
-
+if multCheck
+	multiConcArr = createMultiArr(cur_conc,conList,veg)
+	sol_arr = []
+	plotArr = []
+	
+	for item in multiConcArr
+		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate));
+		append!(sol_arr,[tempsol])
+		
+	end
+	numPlots = length(multiConcArr)
+	
+	for p in 1:length(sol_arr)
+		tsol = sol_arr[p]
+		concName = conList[p]
+		println(concName)
+		append!(plotArr,[createPlot(tsol,model,concName)])
+		
+	end
+	
+	labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+	println(labels_mult)
+	plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false)
+		
 end
+	
 end
 
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
@@ -1365,10 +1386,13 @@ end
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 # ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
 # ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
-# ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
+# ╟─e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╟─7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
+# ╟─3f8db202-ac50-462d-b96d-ba629ca43325
+# ╟─d3a6dede-a10e-4552-9f3c-815c7ff9d06b
+# ╟─f7632708-7a0f-4c18-9f0b-44fb49aaeaa0
 # ╟─12866252-a5c6-43d0-92f1-d52df5a2d949
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
