@@ -13,6 +13,23 @@ macro bind(def, element)
     end
 end
 
+# ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
+begin
+	using Pkg
+	Pkg.activate()
+	using Colors
+	using AlgebraicPetri
+	using Catlab
+	using Catlab.WiringDiagrams
+	using Catlab.CategoricalAlgebra
+	using Catlab.Graphics
+	using Catlab.Present
+	using Catlab.Theories
+	using JSON
+	using DataFrames
+	using CSV
+end
+
 # ╔═╡ 32c8703f-6aa3-46be-a91b-ff36225d6bd8
 module EnzymeReactions
 
@@ -239,23 +256,6 @@ function enzyme_generators(enzymes::Array{Symbol}, substrates::Array{Symbol})
   end
   gens
 end
-end
-
-# ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
-begin
-#	using Pkg
-#	Pkg.activate(".")
-	using Colors
-	using AlgebraicPetri
-	using Catlab
-	using Catlab.WiringDiagrams
-	using Catlab.CategoricalAlgebra
-	using Catlab.Graphics
-	using Catlab.Present
-	using Catlab.Theories
-	using JSON
-	using DataFrames
-	using CSV
 end
 
 # ╔═╡ 3779b846-e5ec-4239-a1d4-af2f8c2f10eb
