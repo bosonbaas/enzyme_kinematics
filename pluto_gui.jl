@@ -16,7 +16,7 @@ end
 # ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
 begin
 	using Pkg
-	Pkg.activate()
+	Pkg.activate("/home/jovyan")
 	using Colors
 	using AlgebraicPetri
 	using Catlab
