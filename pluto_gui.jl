@@ -1370,9 +1370,9 @@ LabelledReactionNet{Number, Number}(model, get_inds(def_concs, snames(model)), g
 end
 
 # ╔═╡ Cell order:
+# ╟─4c9c24cc-b865-4825-a841-f717120d27d2
 # ╟─32c8703f-6aa3-46be-a91b-ff36225d6bd8
 # ╟─178e764e-e239-4689-bb2f-4993b7755724
-# ╟─4c9c24cc-b865-4825-a841-f717120d27d2
 # ╟─563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
 # ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
 # ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
