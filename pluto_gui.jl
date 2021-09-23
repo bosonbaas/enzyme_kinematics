@@ -963,7 +963,7 @@ $(@bind veg Select(keyArrStr))
 
 Starting Concentration: $(@bind initConc TextField()) \
 End Concentration: $(@bind endConc TextField()) \
-number of steps: $(@bind stepsConc NumberField(1:10)) \
+number of steps: $(@bind stepsConc NumberField(1:10, default=5)) \
 Linear spacing $(@bind linCheck CheckBox(false)) logarithmic spacing $(@bind logCheck CheckBox(false))
 
 """
@@ -1122,7 +1122,7 @@ begin
 		#Change symbol array to string
 		B = Array{String}(undef, length(arr))
 		for i in 1:length(arr)
-			 B[i] = String(arr[i])
+			 B[i] = string(arr[i])
 		end
 		return B
 
@@ -1217,9 +1217,16 @@ begin
 	elseif logCheck
 		conList = logrange(initConc,endConc,stepsConc);
 		# println(conList)
+	else
+		conList = ["Empty"]
 	end
 	nothing;
 end
+
+# ╔═╡ f0eb5d23-e4c5-4189-a4aa-adf3219227cf
+md"""### Export specific concentration $(@bind expMultCheck CheckBox(false))
+#### Select chemical: 
+$(@bind conListSel Select(formatStrArr(conList)))"""
 
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 begin
@@ -1323,6 +1330,50 @@ end
 	
 end
 
+# ╔═╡ b9b223de-0ff8-436e-9a4c-e056e1c3a412
+begin
+	if expMultCheck
+		ind = findall( x -> occursin(conListSel, x), formatStrArr(conList))
+		# selected_conc = float64(conListSel)
+		sol_sel = sol_arr[ind][1]
+		df_sel = DataFrame(sol_sel)
+		nms_sel = collect(keys(sol_sel(0)))
+		prepend!(nms_sel,[:timestamp])
+		rename!(df_sel,nms_sel)
+		nmsStr_sel = formatStrArr(nms_sel)
+		filtered_names_sel = []	
+		filtered_names_inx_sel = []
+
+		if length(filter_list) > 0
+			for i in 1:length(filter_list)
+				name = filter_list[i]
+					
+					for j in 1:length(nmsStr_sel)
+
+						if occursin(name,nmsStr_sel[j]) == true
+							append!(filtered_names_inx_Sel,[j])
+						end
+					end
+			end
+		end
+		sort!(unique!(filtered_names_inx_sel))
+		deleteat!(nmsStr_sel,filtered_names_inx_sel)
+
+		finKeys_sel = formatSymbArr(nmsStr_sel)
+
+		dfFin_sel = select(df_sel,finKeys_sel)
+		CSV.write("sim_res_sel.csv", dfFin_sel)
+		
+	else
+		
+	end
+md"""
+
+ Download selected data:  $(DownloadButton(read("sim_res_sel.csv"), "sim_results.csv")) 
+
+"""
+end
+
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 begin
   if c != 0
@@ -1393,12 +1444,14 @@ end
 # ╟─3f8db202-ac50-462d-b96d-ba629ca43325
 # ╟─d3a6dede-a10e-4552-9f3c-815c7ff9d06b
 # ╟─f7632708-7a0f-4c18-9f0b-44fb49aaeaa0
+# ╟─f0eb5d23-e4c5-4189-a4aa-adf3219227cf
+# ╟─b9b223de-0ff8-436e-9a4c-e056e1c3a412
 # ╟─12866252-a5c6-43d0-92f1-d52df5a2d949
 # ╟─a141cd27-6ea0-4f73-80b5-72d8e5770ed4
 # ╟─d80f94c4-03d2-4aac-90f5-9415405b4412
 # ╟─043f7a23-3b59-4e34-a8d3-9853cc66c228
 # ╟─1596bc9f-f7e4-4d3d-9978-9da4eecbaede
 # ╟─675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
-# ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
+# ╠═afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
