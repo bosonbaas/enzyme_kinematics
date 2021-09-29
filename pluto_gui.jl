@@ -957,19 +957,22 @@ sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
 end
 
 # ╔═╡ 3f8db202-ac50-462d-b96d-ba629ca43325
-md"""### Iterate over multiple concentrations $(@bind multCheck CheckBox(false))
-#### Select chemical: 
+md"""### Iterate over multiple species concentrations $(@bind multCheck CheckBox(false))
+#### Select species to iterate: 
 $(@bind veg Select(keyArrStr))
 
 Starting Concentration: $(@bind initConc TextField()) \
 End Concentration: $(@bind endConc TextField()) \
 number of steps: $(@bind stepsConc NumberField(1:10, default=5)) \
-Linear spacing $(@bind linCheck CheckBox(false)) logarithmic spacing $(@bind logCheck CheckBox(false))
+Linear spacing $(@bind linCheck CheckBox(false)) logarithmic spacing $(@bind logCheck CheckBox(false)) \
+Display combined concentrations excluding degraded? $(@bind combineCheckDeg CheckBox(false))
 
 """
 
 # ╔═╡ 12866252-a5c6-43d0-92f1-d52df5a2d949
-md"""Display total concentrations? $(@bind combineCheck CheckBox(false))"""
+md"""Display total concentrations? $(@bind combineCheck CheckBox(false)) 
+
+"""
 
 # ╔═╡ d80f94c4-03d2-4aac-90f5-9415405b4412
 begin
@@ -1146,7 +1149,7 @@ begin
 		dff.timestamp = df[!,"timestamp"]
 		for i in 1:length(chems)
 			arr = zeros(length(dff.timestamp))
-			println("new chem")
+			# println("new chem")
 			for j in 2:length(cols)
 				letter2 = split(cols[j],"↦")[1]
 				# if chems[i] == cols[j][1]
@@ -1156,6 +1159,45 @@ begin
 					# println("Value added: ", df[10,cols[j]])
 					arr = arr .+ df[!,cols[j]]
 					# println("arr after: ",arr[10] )
+
+				end
+			end
+
+			colname = string(chems[i])
+
+			dff[!,colname] = arr
+		end
+
+		return dff
+	end
+	
+	
+		function combineConcNoDeg(df)
+		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
+		cols = names(df)
+		# println(cols)
+		chems = Array{String}(undef, 0)
+		for i in 2:length(cols)
+
+			# letter = cols[i][1]
+			letter = split(cols[i],"↦")[1]
+			# println(split(cols[i],"↦")[1])
+			if occursin("deg",letter) == false
+				append!(chems,[letter])
+			end
+		end
+		unique!(chems)
+		# println(chems)
+		dff = DataFrame()
+		dff.timestamp = df[!,"timestamp"]
+		for i in 1:length(chems)
+			arr = zeros(length(dff.timestamp))
+			# println("new chem")
+			for j in 2:length(cols)
+				letter2 = split(cols[j],"↦")[1]
+
+				if chems[i] == letter2
+					arr = arr .+ df[!,cols[j]]
 
 				end
 			end
@@ -1205,6 +1247,26 @@ begin
 	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...),title = name, linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
 		
 	end
+	
+	function createPlotDF(sol,model,current_conc)
+			graphKeySymb2 = Symbol[]
+			labels2 = isempty(graphKeySymb2) ? snames(model) : graphKeySymb2
+			
+			S_labels2 = formatStrArr(labels2)
+			prepend!(S_labels2,["timestamp"])
+			dfs2 = DataFrame(sol)
+			rename!(dfs2,S_labels2)
+			# names(dfs)[1][1]
+			# dff2 = combineConc(dfs2)
+			dff2 = combineConcNoDeg(dfs2)
+			labels_new2 = names(dff2)[2:end]
+
+			timesteps2 = dff2[!,"timestamp"]
+			dff2[!,2:end]
+			data2 = Matrix(dff2[!,2:end])/1e3
+			return plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+		
+	end
 end
 
 
@@ -1225,7 +1287,7 @@ end
 
 # ╔═╡ f0eb5d23-e4c5-4189-a4aa-adf3219227cf
 md"""### Export specific concentration $(@bind expMultCheck CheckBox(false))
-#### Select chemical: 
+#### Select starting species concentration for export: 
 $(@bind conListSel Select(formatStrArr(conList)))"""
 
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
@@ -1309,6 +1371,12 @@ if multCheck
 	
 	for item in multiConcArr
 		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate));
+		# tempsol = DataFrame(tempsol[sol])
+		# println(tempsol)
+# 		if combineCheckDeg
+			
+# 			tempsol = combineConcNoDeg(tempsol)
+# 		end
 		append!(sol_arr,[tempsol])
 		
 	end
@@ -1317,13 +1385,17 @@ if multCheck
 	for p in 1:length(sol_arr)
 		tsol = sol_arr[p]
 		concName = conList[p]
-		println(concName)
-		append!(plotArr,[createPlot(tsol,model,concName)])
+		# println(concName)
+		if combineCheckDeg == false
+			append!(plotArr,[createPlot(tsol,model,concName)])
+		else
+			append!(plotArr,[createPlotDF(tsol,model,concName)])	
+		end
 		
 	end
 	
 	labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-	println(labels_mult)
+	
 	plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false)
 		
 end
@@ -1399,8 +1471,8 @@ begin
 			dfs2 = DataFrame(sol)
 			rename!(dfs2,S_labels2)
 			# names(dfs)[1][1]
-			dff2 = combineConc(dfs2)
-
+			# dff2 = combineConc(dfs2)
+			dff2 = combineConcNoDeg(dfs2)
 			labels_new2 = names(dff2)[2:end]
 
 			timesteps2 = dff2[!,"timestamp"]
@@ -1452,6 +1524,6 @@ end
 # ╟─043f7a23-3b59-4e34-a8d3-9853cc66c228
 # ╟─1596bc9f-f7e4-4d3d-9978-9da4eecbaede
 # ╟─675d0bb0-4601-4f4e-bc7d-5d5fb2d70b18
-# ╠═afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
+# ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
