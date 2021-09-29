@@ -42,7 +42,7 @@ using Distributions
 
 using DifferentialEquations
 using Plots
-
+using Plots.PlotMeasures
 export ob, ode,
        inactivate, bindunbind, degrade,
        enzX, enzXY, enzXsubY,
@@ -965,7 +965,8 @@ Starting Concentration: $(@bind initConc TextField()) \
 End Concentration: $(@bind endConc TextField()) \
 number of steps: $(@bind stepsConc NumberField(1:10, default=5)) \
 Linear spacing $(@bind linCheck CheckBox(false)) logarithmic spacing $(@bind logCheck CheckBox(false)) \
-Display combined concentrations excluding degraded? $(@bind combineCheckDeg CheckBox(false))
+Display combined concentrations excluding degraded? $(@bind combineCheckDeg CheckBox(false)) \
+Use constant scale for axis? $(@bind scaleCheck CheckBox(false))
 
 """
 
@@ -1240,15 +1241,15 @@ begin
 		return multiConcArr
 	end
 	
-	function createPlot(sol, model,current_conc)
+	function createPlot(sol, model,current_conc,n)
 		tsteps = sol.t
 		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-		name = string("Starting Concentration: ", string(current_conc))
+		name = string("Plot ",string(n)," init conc: ", string(current_conc))
 	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...),title = name, linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
 		
 	end
 	
-	function createPlotDF(sol,model,current_conc)
+	function createPlotDF(sol,model,current_conc,n)
 			graphKeySymb2 = Symbol[]
 			labels2 = isempty(graphKeySymb2) ? snames(model) : graphKeySymb2
 			
@@ -1260,11 +1261,11 @@ begin
 			# dff2 = combineConc(dfs2)
 			dff2 = combineConcNoDeg(dfs2)
 			labels_new2 = names(dff2)[2:end]
-
+			name = string("Plot ",string(n),", init conc: ", string(current_conc))
 			timesteps2 = dff2[!,"timestamp"]
 			dff2[!,2:end]
 			data2 = Matrix(dff2[!,2:end])/1e3
-			return plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+			return plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), title = name, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
 		
 	end
 end
@@ -1371,32 +1372,24 @@ if multCheck
 	
 	for item in multiConcArr
 		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate));
-		# tempsol = DataFrame(tempsol[sol])
-		# println(tempsol)
-# 		if combineCheckDeg
-			
-# 			tempsol = combineConcNoDeg(tempsol)
-# 		end
-		append!(sol_arr,[tempsol])
-		
+		append!(sol_arr,[tempsol])	
 	end
+		
 	numPlots = length(multiConcArr)
-	
 	for p in 1:length(sol_arr)
 		tsol = sol_arr[p]
 		concName = conList[p]
-		# println(concName)
 		if combineCheckDeg == false
-			append!(plotArr,[createPlot(tsol,model,concName)])
+			append!(plotArr,[createPlot(tsol,model,concName,p)])
 		else
-			append!(plotArr,[createPlotDF(tsol,model,concName)])	
+			append!(plotArr,[createPlotDF(tsol,model,concName,p)])	
 		end
 		
 	end
 	
 	labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
 	
-	plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false)
+	plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm)
 		
 end
 	
