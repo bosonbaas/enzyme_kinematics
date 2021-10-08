@@ -965,11 +965,26 @@ $(@bind veg Select(keyArrStr))
 Starting Concentration: $(@bind initConc TextField()) \
 End Concentration: $(@bind endConc TextField()) \
 number of steps: $(@bind stepsConc NumberField(1:10, default=5)) \
-Linear spacing $(@bind linCheck CheckBox(false)) logarithmic spacing $(@bind logCheck CheckBox(false)) \
+
+Choose spacing type: $(@bind spacing Select(["Logarithmic","Linear"])) \
 Display combined concentrations excluding degraded? $(@bind combineCheckDeg CheckBox(false)) \
 Use constant scale for axis? $(@bind scaleCheck CheckBox(false))
 
 """
+
+# ╔═╡ d3a6dede-a10e-4552-9f3c-815c7ff9d06b
+# begin 
+# 	if spacing == "Linear"
+# 		conList = range(parse(Float64,initConc), parse(Float64,endConc), length = stepsConc)
+		
+# 	elseif spacing == "Logarithmic"
+# 		conList = logrange(initConc,endConc,stepsConc);
+# 		# println(conList)
+# 	else
+# 		conList = ["Empty"]
+# 	end
+# 	nothing;
+# end
 
 # ╔═╡ 12866252-a5c6-43d0-92f1-d52df5a2d949
 md"""Display total concentrations? $(@bind combineCheck CheckBox(false)) 
@@ -1273,20 +1288,6 @@ end
 
 
 
-# ╔═╡ d3a6dede-a10e-4552-9f3c-815c7ff9d06b
-begin 
-	if linCheck
-		conList = range(parse(Float64,initConc), parse(Float64,endConc), length = stepsConc)
-		
-	elseif logCheck
-		conList = logrange(initConc,endConc,stepsConc);
-		# println(conList)
-	else
-		conList = ["Empty"]
-	end
-	nothing;
-end
-
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 begin
 		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
@@ -1362,6 +1363,15 @@ end
 # ╔═╡ f7632708-7a0f-4c18-9f0b-44fb49aaeaa0
 begin
 if multCheck
+			if spacing == "Linear"
+		conList = range(parse(Float64,initConc), parse(Float64,endConc), length = stepsConc)
+		
+	elseif spacing == "Logarithmic"
+		conList = logrange(initConc,endConc,stepsConc);
+		# println(conList)
+	else
+		conList = ["Empty"]
+	end
 	multiConcArr = createMultiArr(cur_conc,conList,veg)
 	sol_arr = []
 	plotArr = []
