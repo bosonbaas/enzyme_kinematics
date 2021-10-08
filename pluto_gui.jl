@@ -1410,7 +1410,7 @@ if multCheck
 					maxlim = maximum(sol_arr[j])
 				end
 			end
-				plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm, lims = (0,maxlim/1e3))	
+				plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm, ylims = (0,maxlim/1e3))	
 		end
 	else
 		plotNumArr = ["Empty"];
