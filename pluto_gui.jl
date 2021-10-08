@@ -28,6 +28,7 @@ begin
 	using JSON
 	using DataFrames
 	using CSV
+	using XLSX
 end
 
 # ╔═╡ 32c8703f-6aa3-46be-a91b-ff36225d6bd8
@@ -1286,11 +1287,6 @@ begin
 	nothing;
 end
 
-# ╔═╡ f0eb5d23-e4c5-4189-a4aa-adf3219227cf
-md"""### Export specific concentration $(@bind expMultCheck CheckBox(false))
-#### Select starting species concentration for export: 
-$(@bind conListSel Select(formatStrArr(conList)))"""
-
 # ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 begin
 		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
@@ -1369,6 +1365,7 @@ if multCheck
 	multiConcArr = createMultiArr(cur_conc,conList,veg)
 	sol_arr = []
 	plotArr = []
+	plotNumArr = []
 	
 	for item in multiConcArr
 		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate));
@@ -1388,21 +1385,46 @@ if multCheck
 	end
 	
 	labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-	
-	plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm)
+		
+	for i in 1:length(conList)
+		append!(plotNumArr,[string("Plot ",string(i))])
+	end
+		if scaleCheck == false
+
+			plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm)
+		else
+			maxlim = 1.0
+			for j in 1:length(sol_arr)
+				
+				if maximum(sol_arr[j])>maxlim
+					maxlim = maximum(sol_arr[j])
+				end
+			end
+				plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm, lims = (0,maxlim/1e3))	
+		end
+	else
+		plotNumArr = ["Empty"];
+		nothing;
 		
 end
 	
 end
 
+# ╔═╡ f0eb5d23-e4c5-4189-a4aa-adf3219227cf
+md"""#### Choose export mode $(@bind exportMode Select(["Export all plots", "Export specific plot"]))
+##### Select plot for export: 
+$(@bind conListSel Select(formatStrArr(plotNumArr)))
+"""
+
 # ╔═╡ b9b223de-0ff8-436e-9a4c-e056e1c3a412
 begin
-	if expMultCheck
-		ind = findall( x -> occursin(conListSel, x), formatStrArr(conList))
-		# selected_conc = float64(conListSel)
+	if multCheck
+	if exportMode == "Export specific plot"
+		ind = parse(Int8,conListSel[end])
+		println("EXporting specific Plot")
 		sol_sel = sol_arr[ind][1]
-		df_sel = DataFrame(sol_sel)
-		nms_sel = collect(keys(sol_sel(0)))
+		df_sel = DataFrame(sol_arr[ind])
+		nms_sel = collect(keys(sol_sel))
 		prepend!(nms_sel,[:timestamp])
 		rename!(df_sel,nms_sel)
 		nmsStr_sel = formatStrArr(nms_sel)
@@ -1427,16 +1449,45 @@ begin
 		finKeys_sel = formatSymbArr(nmsStr_sel)
 
 		dfFin_sel = select(df_sel,finKeys_sel)
-		CSV.write("sim_res_sel.csv", dfFin_sel)
-		
-	else
-		
-	end
-md"""
+		# CSV.write("sim_res_sel.csv", dfFin_sel)
+		XLSX.writetable("sim_results.xlsx", collect(DataFrames.eachcol(dfFin_sel)), DataFrames.names(dfFin_sel);overwrite = true)
 
- Download selected data:  $(DownloadButton(read("sim_res_sel.csv"), "sim_results.csv")) 
+		
+	elseif exportMode == "Export all plots"
+		println("Export all plots")
+		# Use the xlsx package to create an excel sheet with multiple tabs. Then can export dataframes
+		#First convert solution into dataframes
+		df_list = []
+
+		for sltn in 1:length(plotNumArr)
+			println(sltn)
+			temp_sol = sol_arr[sltn]
+			# println(temp_sol)
+			df_temp = DataFrame(temp_sol)
+			
+			append!(df_list,[df_temp])
+		end
+			
+		spec_names = formatStrArr(collect(keys(sol_arr[1][1])))
+		prepend!(spec_names,["timestamp"])
+		df_dict = Dict()
+		for i in 1:length(df_list)
+			name = "Plot "*string(i)
+			df_dict[Symbol(name)] =  ( collect(DataFrames.eachcol(df_list[i])), spec_names)
+		end
+	XLSX.writetable("sim_results.xlsx"; df_dict..., overwrite = true)	
+
+	end
+						md"""
+
+ Download data:  $(DownloadButton(read("sim_results.xlsx"), "sim_results.xlsx")) 
 
 """
+	else
+		nothing
+	end
+
+		
 end
 
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
