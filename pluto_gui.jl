@@ -972,20 +972,6 @@ Use constant scale for axis? $(@bind scaleCheck CheckBox(false))
 
 """
 
-# ╔═╡ d3a6dede-a10e-4552-9f3c-815c7ff9d06b
-# begin 
-# 	if spacing == "Linear"
-# 		conList = range(parse(Float64,initConc), parse(Float64,endConc), length = stepsConc)
-		
-# 	elseif spacing == "Logarithmic"
-# 		conList = logrange(initConc,endConc,stepsConc);
-# 		# println(conList)
-# 	else
-# 		conList = ["Empty"]
-# 	end
-# 	nothing;
-# end
-
 # ╔═╡ 12866252-a5c6-43d0-92f1-d52df5a2d949
 md"""Display total concentrations? $(@bind combineCheck CheckBox(false)) 
 
@@ -1568,7 +1554,6 @@ end
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─3f8db202-ac50-462d-b96d-ba629ca43325
-# ╟─d3a6dede-a10e-4552-9f3c-815c7ff9d06b
 # ╟─f7632708-7a0f-4c18-9f0b-44fb49aaeaa0
 # ╟─f0eb5d23-e4c5-4189-a4aa-adf3219227cf
 # ╟─b9b223de-0ff8-436e-9a4c-e056e1c3a412
