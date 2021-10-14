@@ -972,6 +972,110 @@ Use constant scale for axis? $(@bind scaleCheck CheckBox(false))
 
 """
 
+# ╔═╡ cb45ae16-8893-4b80-bae0-fcef646a56b2
+begin
+if multCheck
+keyArr3 = ["A","B"];
+graphKeys3 = []
+graphKeyVals3 = HTML("""
+<bond def = "graphKeys3">
+<form>
+
+  <div id ="myDIV3" style='height:300px;overflow:scroll'>
+
+  <h4>Select Species to plot</h4>
+			<p>This plot will display how selected species change over iterations. Limit of 6 species. Iteration is indicated by color and species is indicated by marker shape</p>
+			
+  <select  id="graphConc" multiple = "multiple" size = "10">
+
+  </select>
+
+
+
+  </div>
+
+
+
+</form>
+</bond>
+<style>
+
+#myDIV2 {
+  width: 100%;
+  padding: 10px 0;
+  text-align: center;
+  background-color: #F9F6E5;
+  margin-top: 10px;
+}
+
+
+</style>
+
+
+
+<script>
+//`currentScript` is the current script tag - we use it to select elements//
+
+
+const form = currentScript.parentElement.querySelector('form')
+const list =  form.querySelector('select')
+console.log(list)
+var concList = $keyArrStr;
+console.log(concList)
+
+for ( var key in concList ){
+  console.log(concList[key]);
+  //var item = document.createElement('tr');
+  //var label = document.createElement('th');
+  var item = document.createElement('option');
+  item.value = concList[key];
+  item.label = concList[key];
+  list.appendChild(item)
+
+}
+
+
+
+
+
+var x = form.getElementsByClassName('selector');
+function onsubmit(){
+		console.log('onsubmit called')
+  // We send the value back to Julia //
+		console.log(x)
+
+
+    var selected = [];
+    for (var option of document.getElementById('graphConc').options)
+    {
+        if (option.selected) {
+            selected.push(option.value);
+        }
+    }
+ form.value = selected
+  form.dispatchEvent(new CustomEvent('input'))
+
+  console.log(form.value)
+    console.log(selected)
+}
+var b = document.createElement('input');
+b.setAttribute('type', 'button');
+b.setAttribute('class', 'button');
+b.value = 'Plot species';
+b.addEventListener('click', function() {onsubmit();console.log('hello from button')})
+form.appendChild(b)
+onsubmit()
+
+
+
+
+</script>
+""");
+	else
+		nothing;
+	end
+end
+
 # ╔═╡ 12866252-a5c6-43d0-92f1-d52df5a2d949
 md"""Display total concentrations? $(@bind combineCheck CheckBox(false)) 
 
@@ -1270,6 +1374,31 @@ begin
 			return plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), title = name, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
 		
 	end
+	
+	function generatePlotDF2(df_plot,timestamps,numSpecs,nplots)
+		clrs = ["red" "blue" "green" "purple" "orange" "pink"]
+		mkrs = [:circle :cross :rect :diamond :utriangle :dtriangle ]
+		
+		#Format markers and colors correctly
+		clr_array = []
+		mkrs_array = []
+		for i in 1:nplots
+			for j in 1:numSpecs
+				append!(clr_array,[clrs[i]])
+				append!(mkrs_array,[mkrs[j]])
+			end
+		end
+		
+		clr_array = reshape(clr_array, (1,length(clr_array)))
+		mkrs_array = reshape(mkrs_array, (1,length(mkrs_array)))
+		# mkrs = mkrs[1:numSpecs]
+		# println(mkrs)
+		mat_data = Matrix(df_plot)
+		plotnames = names(df_plot)
+		plotlabel = reshape(plotnames, (1,length(plotnames)))
+		return plot(timestamps,mat_data, label = plotlabel, linecolor = clr_array, markershape = mkrs_array, markercolor = clr_array, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+	end
+	
 end
 
 
@@ -1364,7 +1493,7 @@ if multCheck
 	plotNumArr = []
 	
 	for item in multiConcArr
-		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate));
+		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate), saveat = 1.0);
 		append!(sol_arr,[tempsol])	
 	end
 		
@@ -1405,6 +1534,43 @@ if multCheck
 end
 	
 end
+
+# ╔═╡ 99758072-3774-4bdc-9730-f0efff0e9330
+begin 
+	
+if multCheck
+		df_array = []
+		#Convert solutions to dataframe
+		str_labels_mult = formatStrArr(labels_mult)
+		numSpecs = length(graphKeys3)
+		nplots = length(sol_arr)
+		prepend!(str_labels_mult,["timestamp"])
+		timestamps = []
+	for i in 1:length(sol_arr)
+			
+		tempdf = DataFrame(sol_arr[i])
+		rename!(tempdf,str_labels_mult)
+		timestamps = tempdf[!, "timestamp"]
+		append!(df_array,[select(tempdf,graphKeys3)])
+	end
+	df_plot = df_array[1]
+	# timestamps = sol_arr[1][!,:timestamp]
+	for i in 2:length(sol_arr)
+		df_plot = hcat(df_plot,df_array[i], makeunique=true)
+	end
+		# println(df_plot)
+		
+		# mat_data = Matrix(df_plot)
+		# plotnames = names(df_plot)
+		# plotlabel = reshape(plotnames, (1,length(plotnames)))
+		# plot(timestamps,mat_data, label = plotLabel, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+	else
+		nothing;
+	end
+end
+
+# ╔═╡ 95cfdfe4-7fd8-4155-8a29-5a9711ab0f10
+generatePlotDF2(df_plot,timestamps,numSpecs,nplots)
 
 # ╔═╡ f0eb5d23-e4c5-4189-a4aa-adf3219227cf
 md"""#### Choose export mode $(@bind exportMode Select(["Export all plots", "Export specific plot"]))
@@ -1555,6 +1721,9 @@ end
 # ╟─066b7505-e21b-467e-86c1-cea1ff80246e
 # ╟─3f8db202-ac50-462d-b96d-ba629ca43325
 # ╟─f7632708-7a0f-4c18-9f0b-44fb49aaeaa0
+# ╟─cb45ae16-8893-4b80-bae0-fcef646a56b2
+# ╟─99758072-3774-4bdc-9730-f0efff0e9330
+# ╟─95cfdfe4-7fd8-4155-8a29-5a9711ab0f10
 # ╟─f0eb5d23-e4c5-4189-a4aa-adf3219227cf
 # ╟─b9b223de-0ff8-436e-9a4c-e056e1c3a412
 # ╟─12866252-a5c6-43d0-92f1-d52df5a2d949
