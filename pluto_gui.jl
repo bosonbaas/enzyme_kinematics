@@ -1537,9 +1537,9 @@ end
 
 # ╔═╡ 99758072-3774-4bdc-9730-f0efff0e9330
 begin 
-	
+	df_array = [];
 if multCheck
-		df_array = []
+		
 		#Convert solutions to dataframe
 		str_labels_mult = formatStrArr(labels_mult)
 		numSpecs = length(graphKeys3)
@@ -1570,7 +1570,13 @@ if multCheck
 end
 
 # ╔═╡ 95cfdfe4-7fd8-4155-8a29-5a9711ab0f10
+begin 
+	if multCheck == true && length(df_array)>0 
 generatePlotDF2(df_plot,timestamps,numSpecs,nplots)
+	else
+		nothing;
+	end
+end
 
 # ╔═╡ f0eb5d23-e4c5-4189-a4aa-adf3219227cf
 md"""#### Choose export mode $(@bind exportMode Select(["Export all plots", "Export specific plot"]))
