@@ -1340,7 +1340,7 @@ begin
 			println(tempArr)
 			item = conList[i]
 			println(item)
-			tempArr[Symbol(veg[1])] = item
+			tempArr[Symbol(veg)] = item
 			println(tempArr)
 			append!(multiConcArr,[tempArr])
 		end
