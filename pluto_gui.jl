@@ -1403,78 +1403,6 @@ end
 
 
 
-# ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
-begin
-		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
-	if importCheck == false
-	
-	df = DataFrame(sol2)
-	nms = collect(keys(sol2(0)))
-	prepend!(nms,[:timestamp])
-	rename!(df,nms)
-	nmsStr = formatStrArr(nms)
-	filtered_names = []	
-	filtered_names_inx = []
-	
-	if length(filter_list) > 0
-		for i in 1:length(filter_list)
-			name = filter_list[i]
-				println(name)
-				for j in 1:length(nmsStr)
-					
-					if occursin(name,nmsStr[j]) == true
-						append!(filtered_names_inx,[j])
-					end
-				end
-		end
-	end
-	sort!(unique!(filtered_names_inx))
-	deleteat!(nmsStr,filtered_names_inx)
-	
-	finKeys = formatSymbArr(nmsStr)
-
-	dfFin = select(df,finKeys)
-		CSV.write("sim_res.csv", dfFin)
-		
-		
-	# sol2.u
-	# CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
-	else
-
-	df = DataFrame(sol2)
-	nms = collect(keys(sol2(0)))
-	prepend!(nms,[:timestamp])
-	rename!(df,nms)
-		nmsStr = formatStrArr(nms)
-	filtered_names = []	
-	filtered_names_inx = []
-	
-	if length(filter_list) > 0
-		for i in 1:length(filter_list)
-			name = filter_list[i]
-				println(name)
-				for j in 1:length(nmsStr)
-					
-					if occursin(name,nmsStr[j]) == true
-						append!(filtered_names_inx,[j])
-					end
-				end
-		end
-	end
-	sort!(unique!(filtered_names_inx))
-	deleteat!(nmsStr,filtered_names_inx)
-	intersect!(nmsStr,graphKeys)
-	
-	finKeys = formatSymbArr(nmsStr)
-	prepend!(finKeys,[:timestamp])
-	
-	dfFin = select(df,finKeys)
-		CSV.write("sim_res.csv", dfFin)
-	end
-
-	md""" Download simulation data:  $(DownloadButton(read("sim_res.csv"), "sim_results.csv")) """
-end
-
 # ╔═╡ f7632708-7a0f-4c18-9f0b-44fb49aaeaa0
 begin
 if multCheck
@@ -1509,8 +1437,8 @@ if multCheck
 		
 	end
 	
-	labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-		
+	# labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+	labels_mult = collect(keys(multiConcArr[1]))
 	for i in 1:length(conList)
 		append!(plotNumArr,[string("Plot ",string(i))])
 	end
@@ -1656,6 +1584,78 @@ begin
 	end
 
 		
+end
+
+# ╔═╡ afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
+begin
+		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
+	if importCheck == false
+	
+	df = DataFrame(sol2)
+	nms = collect(keys(sol2(0)))
+	prepend!(nms,[:timestamp])
+	rename!(df,nms)
+	nmsStr = formatStrArr(nms)
+	filtered_names = []	
+	filtered_names_inx = []
+	
+	if length(filter_list) > 0
+		for i in 1:length(filter_list)
+			name = filter_list[i]
+				println(name)
+				for j in 1:length(nmsStr)
+					
+					if occursin(name,nmsStr[j]) == true
+						append!(filtered_names_inx,[j])
+					end
+				end
+		end
+	end
+	sort!(unique!(filtered_names_inx))
+	deleteat!(nmsStr,filtered_names_inx)
+	
+	finKeys = formatSymbArr(nmsStr)
+
+	dfFin = select(df,finKeys)
+		CSV.write("sim_res.csv", dfFin)
+		
+		
+	# sol2.u
+	# CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
+	else
+
+	df = DataFrame(sol2)
+	nms = collect(keys(sol2(0)))
+	prepend!(nms,[:timestamp])
+	rename!(df,nms)
+		nmsStr = formatStrArr(nms)
+	filtered_names = []	
+	filtered_names_inx = []
+	
+	if length(filter_list) > 0
+		for i in 1:length(filter_list)
+			name = filter_list[i]
+				println(name)
+				for j in 1:length(nmsStr)
+					
+					if occursin(name,nmsStr[j]) == true
+						append!(filtered_names_inx,[j])
+					end
+				end
+		end
+	end
+	sort!(unique!(filtered_names_inx))
+	deleteat!(nmsStr,filtered_names_inx)
+	intersect!(nmsStr,graphKeys)
+	
+	finKeys = formatSymbArr(nmsStr)
+	prepend!(finKeys,[:timestamp])
+	
+	dfFin = select(df,finKeys)
+		CSV.write("sim_res.csv", dfFin)
+	end
+
+	md""" Download simulation data:  $(DownloadButton(read("sim_res.csv"), "sim_results.csv")) """
 end
 
 # ╔═╡ a141cd27-6ea0-4f73-80b5-72d8e5770ed4
