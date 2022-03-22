@@ -21,3 +21,6 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 TerminalLoggers = "5d786b92-1e48-4d6f-9151-6b4477ca9bed"
 Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
+
+[compat]
+Catlab = "0.12.5"
