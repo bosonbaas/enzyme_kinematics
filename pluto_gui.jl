@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.5
+# v0.19.9
 
 using Markdown
 using InteractiveUtils
@@ -7,8 +7,9 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
 end
@@ -16,7 +17,7 @@ end
 # ╔═╡ 4c9c24cc-b865-4825-a841-f717120d27d2
 begin
 	using Pkg
-	Pkg.activate("/home/jovyan")
+	Pkg.activate(".")
 	using Colors
 	using AlgebraicPetri
 	using Catlab
@@ -29,6 +30,7 @@ begin
 	using DataFrames
 	using CSV
 	using XLSX
+	Pkg.status()
 end
 
 # ╔═╡ 32c8703f-6aa3-46be-a91b-ff36225d6bd8
@@ -259,18 +261,11 @@ function enzyme_generators(enzymes::Array{Symbol}, substrates::Array{Symbol})
 end
 end
 
-# ╔═╡ 3779b846-e5ec-4239-a1d4-af2f8c2f10eb
-begin
-  using PlutoUI
-  using LabelledArrays
+# ╔═╡ db1cf041-8f29-4433-a8b7-da5ea4828d52
+Pkg.resolve()
 
-  using DifferentialEquations
-  using Plots
-  plotly()
+# ╔═╡ aa5b099e-771f-42ff-a1b1-d22f0e615395
 
-  display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
-  nothing
-end
 
 # ╔═╡ 178e764e-e239-4689-bb2f-4993b7755724
 import .EnzymeReactions: ob, ode,
@@ -403,6 +398,19 @@ end
 function Graphics.to_graphviz(an::AffinityNet; kwargs...)
   propertygraph(an; kwargs...) |> to_graphviz
 end
+end
+
+# ╔═╡ 3779b846-e5ec-4239-a1d4-af2f8c2f10eb
+begin
+  using PlutoUI
+  using LabelledArrays
+
+  using DifferentialEquations
+  using Plots
+  plotly()
+
+  display_uwd(ex) = to_graphviz(ex, box_labels=:name, junction_labels=:variable, edge_attrs=Dict(:len=>".75"));
+  nothing
 end
 
 # ╔═╡ 93df89f0-8429-4fcc-bd01-6982417f5134
@@ -1705,13 +1713,15 @@ LabelledReactionNet{Number, Number}(model, get_inds(def_concs, snames(model)), g
 end
 
 # ╔═╡ Cell order:
-# ╟─4c9c24cc-b865-4825-a841-f717120d27d2
+# ╠═4c9c24cc-b865-4825-a841-f717120d27d2
+# ╠═db1cf041-8f29-4433-a8b7-da5ea4828d52
 # ╟─32c8703f-6aa3-46be-a91b-ff36225d6bd8
-# ╟─178e764e-e239-4689-bb2f-4993b7755724
-# ╟─563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
-# ╟─2d89b8e5-31a0-402c-b95c-87494a5a1317
-# ╟─3779b846-e5ec-4239-a1d4-af2f8c2f10eb
-# ╟─93df89f0-8429-4fcc-bd01-6982417f5134
+# ╠═aa5b099e-771f-42ff-a1b1-d22f0e615395
+# ╠═178e764e-e239-4689-bb2f-4993b7755724
+# ╠═563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
+# ╠═2d89b8e5-31a0-402c-b95c-87494a5a1317
+# ╠═3779b846-e5ec-4239-a1d4-af2f8c2f10eb
+# ╠═93df89f0-8429-4fcc-bd01-6982417f5134
 # ╟─56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
 # ╟─fe9b889d-79c2-493b-9426-e33e6820cd90
 # ╟─950d3b4e-f957-45b6-aa80-e3dfc765aad0
